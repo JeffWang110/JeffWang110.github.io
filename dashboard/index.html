@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes 戰情室 Monitor Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#050a14;--card:#0a1628;--border:#1a2a44;--accent:#00b4ff;--green:#00ff88;--yellow:#ffaa00;--red:#ff3344;--text:#c8d6e5;--text-dim:#5a6a7a;--font:'JetBrains Mono',monospace}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;position:relative;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,180,255,0.015) 2px,rgba(0,180,255,0.015) 4px);pointer-events:none;z-index:9999}
+.container{max-width:1400px;margin:0 auto;padding:0 24px 40px}
+
+/* Top Status Bar */
+.top-bar{position:sticky;top:0;z-index:100;background:linear-gradient(180deg,#060d1a 0%,#0a1628 100%);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.top-left{display:flex;align-items:center;gap:16px}
+.top-title{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:2px}
+.status-indicator{display:flex;align-items:center;gap:8px}
+.status-dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green),0 0 20px rgba(0,255,136,0.3);animation:pulse-glow 2s ease-in-out infinite}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 8px var(--green),0 0 20px rgba(0,255,136,0.3)}50%{box-shadow:0 0 16px var(--green),0 0 40px rgba(0,255,136,0.5)}}
+.status-text{font-size:13px;color:var(--green);font-weight:500}
+.top-right{display:flex;align-items:center;gap:20px}
+.clock{font-size:22px;font-weight:600;color:var(--accent);letter-spacing:1px}
+.stat-pill{font-size:12px;color:var(--text-dim);background:rgba(0,180,255,0.08);padding:4px 12px;border-radius:12px;border:1px solid rgba(0,180,255,0.2)}
+
+/* Section headers */
+.section-title{font-size:16px;font-weight:700;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin:32px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.section-title::before{content:'▸';color:var(--green)}
+
+/* KPI Cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:16px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:all 0.3s;position:relative;overflow:hidden}
+.kpi-card:hover{border-color:var(--accent);box-shadow:0 0 20px rgba(0,180,255,0.15)}
+.kpi-card .kpi-label{font-size:11px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.kpi-card .kpi-value{font-size:36px;font-weight:700}
+.kpi-card .kpi-sub{font-size:11px;color:var(--text-dim);margin-top:4px}
+.kpi-green .kpi-value{color:var(--green)}
+.kpi-accent .kpi-value{color:var(--accent)}
+.kpi-yellow .kpi-value{color:var(--yellow)}
+.kpi-red .kpi-value{color:var(--red)}
+
+/* Surge Sites Table */
+.filter-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+.filter-btn{padding:6px 14px;font-size:11px;font-family:var(--font);background:rgba(0,180,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);cursor:pointer;transition:all 0.2s;letter-spacing:0.5px}
+.filter-btn:hover{background:rgba(0,180,255,0.12);color:var(--text)}
+.filter-btn.active{background:rgba(0,180,255,0.15);border-color:var(--accent);color:var(--accent)}
+.search-box{flex:1;min-width:200px;max-width:360px;padding:6px 12px;font-size:12px;font-family:var(--font);background:#0a1220;border:1px solid var(--border);border-radius:6px;color:var(--text);outline:none;transition:border-color 0.2s}
+.search-box:focus{border-color:var(--accent)}
+.search-box::placeholder{color:var(--text-dim)}
+.site-count{font-size:11px;color:var(--text-dim);margin-left:auto}
+.sites-table-wrap{max-height:480px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--card)}
+.sites-table{width:100%;border-collapse:collapse;font-size:12px}
+.sites-table thead{position:sticky;top:0;z-index:10}
+.sites-table th{background:#0d1a2e;padding:10px 12px;text-align:left;color:var(--accent);font-size:10px;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.sites-table td{padding:8px 12px;border-bottom:1px solid rgba(26,42,68,0.5);vertical-align:middle}
+.sites-table tr:hover td{background:rgba(0,180,255,0.04)}
+.sites-table a{color:var(--accent);text-decoration:none}
+.sites-table a:hover{text-decoration:underline}
+.http-dot{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle}
+.http-200{background:var(--green);box-shadow:0 0 6px var(--green)}
+.cat-tag{font-size:9px;padding:2px 8px;border-radius:4px;letter-spacing:0.5px;white-space:nowrap}
+.cat-system{background:rgba(0,180,255,0.12);color:var(--accent);border:1px solid rgba(0,180,255,0.3)}
+.cat-personal{background:rgba(0,255,136,0.1);color:var(--green);border:1px solid rgba(0,255,136,0.25)}
+.cat-verify{background:rgba(255,170,0,0.1);color:var(--yellow);border:1px solid rgba(255,170,0,0.25)}
+.cat-macmini{background:rgba(170,100,255,0.1);color:#aa64ff;border:1px solid rgba(170,100,255,0.25)}
+.cat-test{background:rgba(255,51,68,0.1);color:var(--red);border:1px solid rgba(255,51,68,0.25)}
+.cat-other{background:rgba(200,214,229,0.08);color:var(--text-dim);border:1px solid rgba(200,214,229,0.15)}
+.new-badge{font-size:9px;padding:1px 6px;border-radius:3px;background:var(--red);color:#fff;font-weight:600;letter-spacing:0.5px;margin-left:4px}
+
+/* Schedule Grid */
+.schedule-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.day-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all 0.3s;position:relative}
+.day-card:hover{border-color:var(--accent);box-shadow:0 0 16px rgba(0,180,255,0.12);transform:translateY(-2px)}
+.day-card.pass{border-left:3px solid var(--green)}
+.day-card.warn{border-left:3px solid var(--yellow)}
+.day-num{font-size:10px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
+.day-title{font-size:13px;font-weight:600;margin:6px 0 4px;color:var(--text)}
+.day-skills{font-size:10px;color:var(--text-dim);line-height:1.5}
+.day-status{position:absolute;top:12px;right:12px;width:8px;height:8px;border-radius:50%}
+.day-status.pass{background:var(--green);box-shadow:0 0 8px var(--green)}
+.day-status.warn{background:var(--yellow);box-shadow:0 0 8px var(--yellow)}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(5,10,20,0.85);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal-box{background:#0c1a30;border:1px solid var(--accent);border-radius:16px;padding:32px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 0 40px rgba(0,180,255,0.2);position:relative}
+.modal-close{position:absolute;top:12px;right:16px;font-size:24px;color:var(--text-dim);cursor:pointer;background:none;border:none;font-family:var(--font)}
+.modal-close:hover{color:var(--accent)}
+.modal-day{font-size:12px;color:var(--accent);letter-spacing:2px;text-transform:uppercase}
+.modal-title{font-size:20px;font-weight:700;margin:8px 0 16px;color:var(--text)}
+.modal-skill-list{list-style:none}
+.modal-skill-list li{padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-skill-name{color:var(--accent);font-size:13px}
+.modal-skill-zh{color:var(--text-dim);font-size:11px}
+
+/* Category Readiness */
+.cat-bars{display:flex;flex-direction:column;gap:14px}
+.cat-bar-row{display:flex;align-items:center;gap:12px}
+.cat-bar-label{font-size:11px;min-width:80px;text-align:right;color:var(--text-dim)}
+.cat-bar-track{flex:1;height:20px;background:#0a1220;border-radius:4px;overflow:hidden;position:relative;border:1px solid var(--border)}
+.cat-bar-fill{height:100%;border-radius:3px;transition:width 0.6s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:10px;font-weight:600;color:#050a14}
+.cat-bar-pct{font-size:11px;min-width:36px;color:var(--text)}
+
+/* Radar */
+.radar-wrap{display:flex;justify-content:center;padding:20px 0}
+.radar-svg{max-width:400px;width:100%}
+
+/* Skill Matrix */
+.skill-grid{display:flex;flex-wrap:wrap;gap:8px}
+.skill-chip{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:all 0.2s;display:flex;flex-direction:column;gap:2px}
+.skill-chip:hover{border-color:var(--accent);box-shadow:0 0 12px rgba(0,180,255,0.15)}
+.skill-chip .skill-name{font-size:11px;color:var(--accent)}
+.skill-chip .skill-zh{font-size:9px;color:var(--text-dim)}
+.skill-chip.verified{border-left:2px solid var(--green)}
+.skill-chip.unverified{border-left:2px solid var(--yellow)}
+
+/* System Log */
+.log-box{background:#020810;border:1px solid var(--border);border-radius:10px;padding:16px;max-height:320px;overflow-y:auto;font-size:11px;line-height:1.8;color:var(--green)}
+.log-box .log-ts{color:var(--text-dim)}
+.log-box .log-ok{color:var(--green)}
+.log-box .log-warn{color:var(--yellow)}
+.log-box .log-line{margin-bottom:2px}
+
+/* Footer */
+.footer{text-align:center;padding:32px 0 24px;border-top:1px solid var(--border);margin-top:40px}
+.footer .ft{font-size:11px;color:var(--text-dim);letter-spacing:1px}
+.footer .ft-title{color:var(--accent);font-weight:600;font-size:13px;margin-bottom:8px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#0a1220}
+::-webkit-scrollbar-thumb{background:#1a2a44;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+/* Responsive */
+@media(max-width:768px){
+  .top-bar{flex-direction:column;align-items:flex-start}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .schedule-grid{grid-template-columns:repeat(2,1fr)}
+  .filter-bar{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- Top Status Bar -->
+<div class="top-bar">
+  <div class="top-left">
+    <div class="status-indicator">
+      <div class="status-dot"></div>
+      <span class="status-text">運作正常</span>
+    </div>
+    <span class="top-title">HERMES 戰情室</span>
+  </div>
+  <div class="top-right">
+    <span class="stat-pill" id="statSites">🏄 90 站點</span>
+    <span class="stat-pill" id="statSkills">⚡ 38 技能</span>
+    <span class="clock" id="clock">--:--:--</span>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+  <div class="kpi-card kpi-accent">
+    <div class="kpi-label">Surge 站點總數</div>
+    <div class="kpi-value" id="kpiTotal">90</div>
+    <div class="kpi-sub">已部署站點</div>
+  </div>
+  <div class="kpi-card kpi-green">
+    <div class="kpi-label">HTTP 200 數</div>
+    <div class="kpi-value" id="kpi200">90</div>
+    <div class="kpi-sub">全部正常回應</div>
+  </div>
+  <div class="kpi-card kpi-yellow">
+    <div class="kpi-label">技能驗證通過</div>
+    <div class="kpi-value" id="kpiPass">4</div>
+    <div class="kpi-sub">/ 14 天排程</div>
+  </div>
+  <div class="kpi-card kpi-green">
+    <div class="kpi-label">異常數</div>
+    <div class="kpi-value" id="kpiError">0</div>
+    <div class="kpi-sub">零異常</div>
+  </div>
+</div>
+
+<!-- Surge Sites Overview -->
+<div class="section-title">Surge 站點總覽</div>
+<div class="filter-bar">
+  <button class="filter-btn active" data-cat="all">全部</button>
+  <button class="filter-btn" data-cat="system">系統工具</button>
+  <button class="filter-btn" data-cat="personal">個人專案</button>
+  <button class="filter-btn" data-cat="verify">技能驗證</button>
+  <button class="filter-btn" data-cat="macmini">Mac Mini</button>
+  <button class="filter-btn" data-cat="test">測試站</button>
+  <button class="filter-btn" data-cat="other">其他</button>
+  <input class="search-box" id="siteSearch" placeholder="🔍 搜尋站點名稱..." />
+  <span class="site-count" id="siteCount">90 站點</span>
+</div>
+<div class="sites-table-wrap">
+  <table class="sites-table">
+    <thead><tr><th>站點名稱</th><th>URL</th><th>天數</th><th>HTTP</th><th>分類</th><th></th></tr></thead>
+    <tbody id="sitesTbody"></tbody>
+  </table>
+</div>
+
+<!-- 14-Day Skill Verification Schedule -->
+<div class="section-title">14天技能驗證排程</div>
+<div class="schedule-grid" id="scheduleGrid"></div>
+
+<!-- Category Readiness -->
+<div class="section-title">分類戰備狀態</div>
+<div class="cat-bars" id="catBars"></div>
+
+<!-- Radar Chart -->
+<div class="section-title">能力雷達圖</div>
+<div class="radar-wrap">
+  <svg class="radar-svg" viewBox="0 0 400 400" id="radarSvg"></svg>
+</div>
+
+<!-- Skill Status Matrix -->
+<div class="section-title">技能狀態矩陣</div>
+<div class="skill-grid" id="skillGrid"></div>
+
+<!-- System Log -->
+<div class="section-title">系統日誌</div>
+<div class="log-box" id="logBox"></div>
+
+</div><!-- container -->
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <div class="modal-day" id="modalDay"></div>
+    <div class="modal-title" id="modalTitle"></div>
+    <ul class="modal-skill-list" id="modalSkills"></ul>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="container">
+  <div class="footer">
+    <div class="ft-title">⚡ 技能指揮中心 — Hermes Monitor</div>
+    <div class="ft">最後更新：<span id="footerTime"></span> &nbsp;|&nbsp; 週期：14天 &nbsp;|&nbsp; 監控數：<span id="footerCount">90 站點 + 38 技能</span></div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const SURGE_SITES = [
+  {name:"hermes-skill-verify-day04",age:3,status:200,is_new:true},
+  {name:"jeff-notebooks-index",age:3,status:200,is_new:false},
+  {name:"fleet-a2a-guide",age:17,status:200,is_new:false},
+  {name:"jeff-hermes-warroom3",age:17,status:200,is_new:false},
+  {name:"hermes-warroom",age:18,status:200,is_new:false},
+  {name:"hermes-skill-verify-day03",age:18,status:200,is_new:false},
+  {name:"jeff-cinematic-selfie",age:18,status:200,is_new:false},
+  {name:"jeff-hermes-warroom2",age:21,status:200,is_new:false},
+  {name:"hermes-skill-verify-day09",age:22,status:200,is_new:false},
+  {name:"jeff-atr-showcase",age:1,status:200,is_new:false},
+  {name:"jeff-dashboards",age:1,status:200,is_new:false},
+  {name:"jeff-claude-bridge",age:2,status:200,is_new:false},
+  {name:"test-no-token-2026",age:2,status:200,is_new:false},
+  {name:"test-empty-token-2026",age:2,status:200,is_new:false},
+  {name:"jeff-video-study",age:2,status:200,is_new:false},
+  {name:"julia-skill-verify-day09",age:2,status:200,is_new:false},
+  {name:"test-empty-surge",age:2,status:200,is_new:false},
+  {name:"jeff-hermes-org",age:2,status:200,is_new:false},
+  {name:"jeff-stock-reports",age:3,status:200,is_new:false},
+  {name:"hermes-skill-verify-day8",age:3,status:200,is_new:false},
+  {name:"hermes-skills-2026",age:3,status:200,is_new:false},
+  {name:"pkm-workflow",age:4,status:200,is_new:false},
+  {name:"book-vote",age:4,status:200,is_new:false},
+  {name:"street-dance-legends",age:4,status:200,is_new:false},
+  {name:"jeff-wiki-graph",age:5,status:200,is_new:false},
+  {name:"jeff-system-analysis",age:5,status:200,is_new:false},
+  {name:"jeff-jamf200-cheatsheet",age:5,status:200,is_new:false},
+  {name:"jeff-jamf200-setup",age:6,status:200,is_new:false},
+  {name:"jeff-jamf200",age:6,status:200,is_new:false},
+  {name:"jeff-ai-chief-of-staff",age:6,status:200,is_new:false},
+  {name:"jeff-mcp-a2a-guide",age:6,status:200,is_new:false},
+  {name:"6282-report",age:6,status:200,is_new:false},
+  {name:"jeff-podcast-agentic-classic",age:6,status:200,is_new:false},
+  {name:"jeff-podcast-agentic-workflow",age:6,status:200,is_new:false},
+  {name:"jeff-kb-workflow",age:7,status:200,is_new:false},
+  {name:"jeff-nvda-tsm",age:7,status:200,is_new:false},
+  {name:"day03-report",age:7,status:200,is_new:false},
+  {name:"jeff-price-hypothesis",age:1,status:200,is_new:false},
+  {name:"jeff-podcast-translate",age:1,status:200,is_new:false},
+  {name:"jeff-invest-hub",age:1,status:200,is_new:false},
+  {name:"tsmc-ap07-meeting",age:2,status:200,is_new:false},
+  {name:"hermes-daily-dashboard",age:2,status:200,is_new:false},
+  {name:"jeff-agent-workflow-method",age:2,status:200,is_new:false},
+  {name:"sugar-lung-report",age:2,status:200,is_new:false},
+  {name:"mysurge-dashboard",age:2,status:200,is_new:false},
+  {name:"sugar-lung-workflow-chart",age:2,status:200,is_new:false},
+  {name:"jeff-ai-mindmap-may",age:2,status:200,is_new:false},
+  {name:"jeff-ai-report-may",age:2,status:200,is_new:false},
+  {name:"nbis-research",age:2,status:200,is_new:false},
+  {name:"net-research",age:2,status:200,is_new:false},
+  {name:"pltr-research",age:2,status:200,is_new:false},
+  {name:"crwv-research",age:2,status:200,is_new:false},
+  {name:"jeff-polymarket-phase4",age:2,status:200,is_new:false},
+  {name:"sugar-doctor-warning",age:2,status:200,is_new:false},
+  {name:"jeff-jia58-raci",age:3,status:200,is_new:false},
+  {name:"mac-mini-agents",age:3,status:200,is_new:false},
+  {name:"jeff-1password-arch",age:3,status:200,is_new:false},
+  {name:"hermes-jia58-modern",age:3,status:200,is_new:false},
+  {name:"hermes-jia58",age:3,status:200,is_new:false},
+  {name:"hermes-jia58-hallmark",age:3,status:200,is_new:false},
+  {name:"hermes-hallmark",age:3,status:200,is_new:false},
+  {name:"jeff-jia58",age:3,status:200,is_new:false},
+  {name:"hermes-comparison-2026",age:3,status:200,is_new:false},
+  {name:"jeff-news-digest",age:3,status:200,is_new:false},
+  {name:"hallmark-demo",age:3,status:200,is_new:false},
+  {name:"jeff-agent-slides",age:3,status:200,is_new:false},
+  {name:"jeff-dash-redesign",age:3,status:200,is_new:false},
+  {name:"mac-mini-workflow",age:4,status:200,is_new:false},
+  {name:"jeff-auto-train-poc",age:1,status:200,is_new:false},
+  {name:"jeff-skills-report",age:1,status:200,is_new:false},
+  {name:"jeff-karpathy-q2",age:1,status:200,is_new:false},
+  {name:"hermes-vs-claude",age:1,status:200,is_new:false},
+  {name:"jeff-stakeholder-map",age:1,status:200,is_new:false},
+  {name:"jeff-agent-architecture",age:1,status:200,is_new:false},
+  {name:"jeff-video-preview",age:1,status:200,is_new:false},
+  {name:"jeff-cybersec-day3",age:1,status:200,is_new:false},
+  {name:"jeff-session-stack",age:1,status:200,is_new:false},
+  {name:"darwin-investing-jeff",age:1,status:200,is_new:false},
+  {name:"mac-mini-llm-kb",age:1,status:200,is_new:false},
+  {name:"jeff-investment-dashboard",age:2,status:200,is_new:false},
+  {name:"jeff-stocks-tw-us-2026",age:2,status:200,is_new:false},
+  {name:"weekly-geopolitics-2026-04-27",age:2,status:200,is_new:false},
+  {name:"polymarket-sop-jeff",age:2,status:200,is_new:false},
+  {name:"mac-mini-ai-integration",age:2,status:200,is_new:false},
+  {name:"jeff-notebooks-wiki",age:2,status:200,is_new:false},
+  {name:"seoul-jeff-0515",age:2,status:200,is_new:false},
+  {name:"claude-ops-dashboard",age:2,status:200,is_new:false},
+  {name:"dual-device-promo",age:2,status:200,is_new:false},
+  {name:"claude-dual-device-guide",age:2,status:200,is_new:false},
+  {name:"claude-skills-summary",age:2,status:200,is_new:false}
+];
+
+const SCHEDULE = [
+  {day:1,title:"論文搜尋+Mind Map",skills:["arxiv","excalidraw","research-paper-writing"],status:"warn"},
+  {day:2,title:"台股數據分析+PDF",skills:["mempalace","nano-pdf","daily-dashboard"],status:"pass"},
+  {day:3,title:"GitHub PR+安全掃描",skills:["github-code-review","requesting-code-review","codebase-inspection"],status:"warn"},
+  {day:4,title:"音樂創作+視覺化",skills:["songwriting-and-ai-music","songsee","ascii-art"],status:"warn"},
+  {day:5,title:"Email+記憶歸檔",skills:["himalaya","mempalace","hermes-memory-hygiene"],status:"warn"},
+  {day:6,title:"LLM部署+評估",skills:["gguf","llama-cpp","vllm","lm-evaluation-harness"],status:"warn"},
+  {day:7,title:"智慧家庭+搜尋",skills:["openhue","find-nearby","daily-dashboard"],status:"warn"},
+  {day:8,title:"Debug+TDD",skills:["systematic-debugging","test-driven-development","writing-plans"],status:"pass"},
+  {day:9,title:"社群+GIF",skills:["xitter","gif-search","blogwatcher"],status:"warn"},
+  {day:10,title:"簡報+OCR",skills:["ocr-and-documents","powerpoint","work-presentation-maker"],status:"pass"},
+  {day:11,title:"預測市場+分析",skills:["polymarket","mempalace","excalidraw"],status:"warn"},
+  {day:12,title:"多Agent協作",skills:["multi-agent-orchestration","subagent-driven-development","claude-code"],status:"pass"},
+  {day:13,title:"Obsidian+Google",skills:["obsidian","google-workspace","notion","linear"],status:"warn"},
+  {day:14,title:"綜合驗證",skills:["youtube-content","arxiv","popular-web-designs","nano-pdf"],status:"warn"}
+];
+
+const CAT_MAP = {
+  "systematic-debugging":"SW-DEV","test-driven-development":"SW-DEV","writing-plans":"SW-DEV",
+  "multi-agent-orchestration":"AGENTS","subagent-driven-development":"AGENTS","claude-code":"AGENTS",
+  "mempalace":"PROD","nano-pdf":"PROD","daily-dashboard":"PROD","ocr-and-documents":"PROD","powerpoint":"PROD","work-presentation-maker":"PROD","hermes-memory-hygiene":"PROD",
+  "gguf":"MLOPS","llama-cpp":"MLOPS","vllm":"MLOPS","lm-evaluation-harness":"MLOPS",
+  "arxiv":"RESEARCH","research-paper-writing":"RESEARCH",
+  "excalidraw":"CREATIVE","songwriting-and-ai-music":"CREATIVE","songsee":"CREATIVE","ascii-art":"CREATIVE","popular-web-designs":"CREATIVE",
+  "github-code-review":"GITHUB","requesting-code-review":"GITHUB","codebase-inspection":"GITHUB",
+  "youtube-content":"MEDIA",
+  "himalaya":"EMAIL",
+  "openhue":"LEISURE","find-nearby":"LEISURE",
+  "xitter":"SOCIAL","gif-search":"SOCIAL",
+  "blogwatcher":"FEEDS",
+  "polymarket":"FINANCE",
+  "obsidian":"NOTES","google-workspace":"NOTES","notion":"NOTES","linear":"NOTES"
+};
+
+const CAT_ZH = {
+  "SW-DEV":"軟體開發","AGENTS":"代理系統","PROD":"生產力","MLOPS":"ML維運",
+  "RESEARCH":"研究","CREATIVE":"創意","GITHUB":"GitHub","MEDIA":"媒體",
+  "EMAIL":"電子郵件","LEISURE":"生活休閒","SOCIAL":"社群媒體","FEEDS":"資訊訂閱",
+  "FINANCE":"金融","NOTES":"筆記"
+};
+
+const SKILL_ZH = {
+  "systematic-debugging":"系統化除錯","test-driven-development":"測試驅動開發","writing-plans":"規劃撰寫",
+  "multi-agent-orchestration":"多代理協作","subagent-driven-development":"子代理驅動開發","claude-code":"Claude程式碼",
+  "mempalace":"記憶宮殿","nano-pdf":"PDF編輯","daily-dashboard":"每日儀表板",
+  "ocr-and-documents":"OCR文件辨識","powerpoint":"PowerPoint簡報","work-presentation-maker":"職場簡報製作",
+  "hermes-memory-hygiene":"記憶空間維護",
+  "gguf":"GGUF模型量化","llama-cpp":"llama.cpp推理","vllm":"vLLM高效推理","lm-evaluation-harness":"LM評估框架",
+  "arxiv":"arXiv論文搜尋","research-paper-writing":"研究論文撰寫",
+  "excalidraw":"Excalidraw繪圖","songwriting-and-ai-music":"AI詞曲創作","songsee":"音頻視覺化","ascii-art":"ASCII藝術","popular-web-designs":"熱門網頁設計",
+  "github-code-review":"GitHub程式碼審查","requesting-code-review":"程式碼安全掃描","codebase-inspection":"程式碼庫檢查",
+  "youtube-content":"YouTube影片分析",
+  "himalaya":"Himalaya郵件",
+  "openhue":"Hue智慧燈光","find-nearby":"附近搜尋",
+  "xitter":"X/Twitter社群","gif-search":"GIF搜尋",
+  "blogwatcher":"部落格監控",
+  "polymarket":"Polymarket預測市場",
+  "obsidian":"Obsidian筆記","google-workspace":"Google辦公套件","notion":"Notion協作","linear":"Linear專案管理"
+};
+
+// ===== CLASSIFY SITE =====
+function classifySite(name) {
+  if (/^hermes-/.test(name) || /^julia-/.test(name)) {
+    if (/hermes-skill-verify/.test(name) || /^julia-skill-verify/.test(name)) return 'verify';
+    if (/day\d+-report/.test(name)) return 'verify';
+    return 'system';
+  }
+  if (/^jeff-/.test(name)) return 'personal';
+  if (/^mac-mini-/.test(name)) return 'macmini';
+  if (/^test-/.test(name)) return 'test';
+  if (/^day\d+-report/.test(name)) return 'verify';
+  return 'other';
+}
+
+const CAT_LABELS = {system:'系統工具',personal:'個人專案',verify:'技能驗證',macmini:'Mac Mini',test:'測試',other:'其他'};
+const CAT_CSS = {system:'cat-system',personal:'cat-personal',verify:'cat-verify',macmini:'cat-macmini',test:'cat-test',other:'cat-other'};
+
+// ===== CLOCK =====
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = h+':'+m+':'+s;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Footer time
+document.getElementById('footerTime').textContent = new Date().toISOString().slice(0,19).replace('T',' ');
+
+// ===== SURGE SITES TABLE =====
+let currentFilter = 'all';
+let currentSearch = '';
+
+function renderSites() {
+  const tbody = document.getElementById('sitesTbody');
+  let filtered = SURGE_SITES.filter(s => {
+    const cat = classifySite(s.name);
+    if (currentFilter !== 'all' && cat !== currentFilter) return false;
+    if (currentSearch && !s.name.toLowerCase().includes(currentSearch.toLowerCase())) return false;
+    return true;
+  });
+  document.getElementById('siteCount').textContent = filtered.length + ' 站點';
+  tbody.innerHTML = filtered.map(s => {
+    const cat = classifySite(s.name);
+    const catLabel = CAT_LABELS[cat] || cat;
+    const catCss = CAT_CSS[cat] || 'cat-other';
+    const ageStr = s.age <= 3 ? s.age + '天' : s.age + '天';
+    const newBadge = s.is_new ? '<span class="new-badge">NEW</span>' : '';
+    return `<tr>
+      <td>${s.name}${newBadge}</td>
+      <td><a href="https://${s.name}.surge.sh" target="_blank">${s.name}.surge.sh</a></td>
+      <td>${ageStr}</td>
+      <td><span class="http-dot http-200"></span> ${s.status}</td>
+      <td><span class="cat-tag ${catCss}">${catLabel}</span></td>
+      <td></td>
+    </tr>`;
+  }).join('');
+}
+
+// Filter buttons
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.cat;
+    renderSites();
+  });
+});
+
+document.getElementById('siteSearch').addEventListener('input', e => {
+  currentSearch = e.target.value;
+  renderSites();
+});
+
+renderSites();
+
+// ===== SCHEDULE GRID =====
+const scheduleGrid = document.getElementById('scheduleGrid');
+SCHEDULE.forEach(day => {
+  const card = document.createElement('div');
+  card.className = 'day-card ' + day.status;
+  card.innerHTML = `
+    <div class="day-num">DAY ${String(day.day).padStart(2,'0')}</div>
+    <div class="day-title">${day.title}</div>
+    <div class="day-skills">${day.skills.length} 技能</div>
+    <div class="day-status ${day.status}"></div>
+  `;
+  card.addEventListener('click', () => openModal(day));
+  scheduleGrid.appendChild(card);
+});
+
+// ===== MODAL =====
+function openModal(day) {
+  const modal = document.getElementById('modal');
+  document.getElementById('modalDay').textContent = 'DAY ' + String(day.day).padStart(2,'0');
+  document.getElementById('modalTitle').textContent = day.title;
+  const list = document.getElementById('modalSkills');
+  list.innerHTML = day.skills.map(sk => {
+    const zh = SKILL_ZH[sk] || sk;
+    return `<li><span class="modal-skill-name">${sk}</span><span class="modal-skill-zh">${zh}</span></li>`;
+  }).join('');
+  modal.classList.add('show');
+}
+document.getElementById('modalClose').addEventListener('click', () => {
+  document.getElementById('modal').classList.remove('show');
+});
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
+});
+
+// ===== CATEGORY READINESS =====
+// Calculate readiness per category
+const allSkills = new Set();
+SCHEDULE.forEach(d => d.skills.forEach(sk => allSkills.add(sk)));
+
+const catSkillCount = {};
+const catSkillVerified = {};
+Object.values(CAT_MAP).forEach(cat => { catSkillCount[cat] = 0; catSkillVerified[cat] = 0; });
+allSkills.forEach(sk => {
+  const cat = CAT_MAP[sk];
+  if (cat) catSkillCount[cat]++;
+});
+// Count verified: skills that appear in "pass" days
+const verifiedSkills = new Set();
+SCHEDULE.filter(d => d.status === 'pass').forEach(d => d.skills.forEach(sk => verifiedSkills.add(sk)));
+allSkills.forEach(sk => {
+  const cat = CAT_MAP[sk];
+  if (cat && verifiedSkills.has(sk)) catSkillVerified[cat]++;
+});
+
+const catColors = {
+  'AGENTS':'#00b4ff','PROD':'#00ff88','SW-DEV':'#ffaa00','MLOPS':'#ff3344',
+  'RESEARCH':'#aa64ff','CREATIVE':'#ff6b9d','MEDIA':'#00d4ff','GITHUB':'#4ecdc4',
+  'EMAIL':'#ff8c42','LEISURE':'#95e1d3','SOCIAL':'#f38181','FEEDS':'#7ec8e3',
+  'FINANCE':'#ffd93d','NOTES':'#c3aed6'
+};
+
+const catBarsEl = document.getElementById('catBars');
+const catOrder = ['AGENTS','PROD','SW-DEV','MLOPS','RESEARCH','CREATIVE','GITHUB','MEDIA','EMAIL','LEISURE','SOCIAL','FEEDS','FINANCE','NOTES'];
+catOrder.forEach(cat => {
+  const total = catSkillCount[cat] || 0;
+  const verified = catSkillVerified[cat] || 0;
+  const pct = total > 0 ? Math.round(verified / total * 100) : 0;
+  const zh = CAT_ZH[cat] || cat;
+  const color = catColors[cat] || '#00b4ff';
+  const row = document.createElement('div');
+  row.className = 'cat-bar-row';
+  row.innerHTML = `
+    <span class="cat-bar-label">${cat}<br><small>${zh}</small></span>
+    <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${color}">${pct > 0 ? pct+'%' : ''}</div></div>
+    <span class="cat-bar-pct">${verified}/${total}</span>
+  `;
+  catBarsEl.appendChild(row);
+});
+
+// ===== RADAR CHART =====
+const radarCats = ['AGENTS','PROD','SW-DEV','MLOPS','RESEARCH','CREATIVE','MEDIA','GITHUB'];
+const radarZh = ['代理系統','生產力','軟體開發','ML維運','研究','創意','媒體','GitHub'];
+function drawRadar() {
+  const svg = document.getElementById('radarSvg');
+  const cx = 200, cy = 200, r = 150;
+  const n = radarCats.length;
+  let html = '';
+  // Background circles
+  for (let i = 5; i >= 1; i--) {
+    const ri = r * i / 5;
+    html += `<circle cx="${cx}" cy="${cy}" r="${ri}" fill="none" stroke="#1a2a44" stroke-width="1"/>`;
+  }
+  // Axes
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const x2 = cx + r * Math.cos(angle);
+    const y2 = cy + r * Math.sin(angle);
+    html += `<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#1a2a44" stroke-width="1"/>`;
+  }
+  // Data polygon
+  const points = radarCats.map((cat, i) => {
+    const total = catSkillCount[cat] || 0;
+    const verified = catSkillVerified[cat] || 0;
+    const pct = total > 0 ? verified / total : 0;
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const x = cx + r * pct * Math.cos(angle);
+    const y = cy + r * pct * Math.sin(angle);
+    return `${x},${y}`;
+  }).join(' ');
+  html += `<polygon points="${points}" fill="rgba(0,180,255,0.15)" stroke="#00b4ff" stroke-width="2"/>`;
+  // Dots + labels
+  radarCats.forEach((cat, i) => {
+    const total = catSkillCount[cat] || 0;
+    const verified = catSkillVerified[cat] || 0;
+    const pct = total > 0 ? verified / total : 0;
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const x = cx + r * pct * Math.cos(angle);
+    const y = cy + r * pct * Math.sin(angle);
+    html += `<circle cx="${x}" cy="${y}" r="4" fill="#00b4ff"/>`;
+    const lx = cx + (r + 28) * Math.cos(angle);
+    const ly = cy + (r + 28) * Math.sin(angle);
+    html += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="#c8d6e5" font-size="10" font-family="JetBrains Mono,monospace">${radarZh[i]}</text>`;
+  });
+  svg.innerHTML = html;
+}
+drawRadar();
+
+// ===== SKILL MATRIX =====
+const skillGrid = document.getElementById('skillGrid');
+const allSkillsArr = Array.from(allSkills).sort();
+allSkillsArr.forEach(sk => {
+  const zh = SKILL_ZH[sk] || sk;
+  const verified = verifiedSkills.has(sk);
+  const chip = document.createElement('div');
+  chip.className = 'skill-chip ' + (verified ? 'verified' : 'unverified');
+  chip.innerHTML = `<span class="skill-name">${verified ? '✅' : '⚠️'} ${sk}</span><span class="skill-zh">${zh}</span>`;
+  skillGrid.appendChild(chip);
+});
+
+// ===== SYSTEM LOG =====
+const logBox = document.getElementById('logBox');
+const now = new Date();
+const logEntries = SCHEDULE.map((day, i) => {
+  const d = new Date(now);
+  d.setDate(d.getDate() - (14 - day.day));
+  const ts = d.toISOString().slice(0, 10) + ' ' + String(8 + i).padStart(2,'0') + ':00';
+  const statusTag = day.status === 'pass' ? '<span class="log-ok">[PASS]</span>' : '<span class="log-warn">[WARN]</span>';
+  return `<div class="log-line"><span class="log-ts">${ts}</span> ${statusTag} Day${String(day.day).padStart(2,'0')} ${day.title} — ${day.skills.length} skills ${day.status === 'pass' ? '✅ 驗證通過' : '⚠️ 待加強'}</div>`;
+});
+// Add site deployment logs
+const siteLogs = SURGE_SITES.slice(0, 10).map((s, i) => {
+  const d = new Date(now);
+  d.setDate(d.getDate() - s.age);
+  const ts = d.toISOString().slice(0, 10);
+  return `<div class="log-line"><span class="log-ts">${ts} 09:${String(30 + i).padStart(2,'0')}</span> <span class="log-ok">[200]</span> ${s.name}.surge.sh deployed</div>`;
+});
+logBox.innerHTML = siteLogs.join('') + logEntries.join('');
+
+// ===== KPI =====
+const kpi200Count = SURGE_SITES.filter(s => s.status === 200).length;
+document.getElementById('kpiTotal').textContent = SURGE_SITES.length;
+document.getElementById('kpi200').textContent = kpi200Count;
+document.getElementById('kpiPass').textContent = SCHEDULE.filter(d => d.status === 'pass').length;
+document.getElementById('kpiError').textContent = SURGE_SITES.filter(s => s.status !== 200).length;
+</script>
+</body>
+</html>
