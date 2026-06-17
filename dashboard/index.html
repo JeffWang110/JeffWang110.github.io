@@ -1,651 +1,819 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hermes 戰情室 Monitor Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Jeff 的 AI 生態戰情室</title>
+<meta name="description" content="個人 AI 技能生態系統總覽 — 部署、技能、架構與監控的視覺化登記簿" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#050a14;--card:#0a1628;--border:#1a2a44;--accent:#00b4ff;--green:#00ff88;--yellow:#ffaa00;--red:#ff3344;--text:#c8d6e5;--text-dim:#5a6a7a;--font:'JetBrains Mono',monospace}
-html{scroll-behavior:smooth}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;position:relative;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,180,255,0.015) 2px,rgba(0,180,255,0.015) 4px);pointer-events:none;z-index:9999}
-.container{max-width:1400px;margin:0 auto;padding:0 24px 40px}
-
-/* Top Status Bar */
-.top-bar{position:sticky;top:0;z-index:100;background:linear-gradient(180deg,#060d1a 0%,#0a1628 100%);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.top-left{display:flex;align-items:center;gap:16px}
-.top-title{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:2px}
-.status-indicator{display:flex;align-items:center;gap:8px}
-.status-dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green),0 0 20px rgba(0,255,136,0.3);animation:pulse-glow 2s ease-in-out infinite}
-@keyframes pulse-glow{0%,100%{box-shadow:0 0 8px var(--green),0 0 20px rgba(0,255,136,0.3)}50%{box-shadow:0 0 16px var(--green),0 0 40px rgba(0,255,136,0.5)}}
-.status-text{font-size:13px;color:var(--green);font-weight:500}
-.top-right{display:flex;align-items:center;gap:20px}
-.clock{font-size:22px;font-weight:600;color:var(--accent);letter-spacing:1px}
-.stat-pill{font-size:12px;color:var(--text-dim);background:rgba(0,180,255,0.08);padding:4px 12px;border-radius:12px;border:1px solid rgba(0,180,255,0.2)}
-
-/* Section headers */
-.section-title{font-size:16px;font-weight:700;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin:32px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.section-title::before{content:'▸';color:var(--green)}
-
-/* KPI Cards */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:16px}
-.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:all 0.3s;position:relative;overflow:hidden}
-.kpi-card:hover{border-color:var(--accent);box-shadow:0 0 20px rgba(0,180,255,0.15)}
-.kpi-card .kpi-label{font-size:11px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
-.kpi-card .kpi-value{font-size:36px;font-weight:700}
-.kpi-card .kpi-sub{font-size:11px;color:var(--text-dim);margin-top:4px}
-.kpi-green .kpi-value{color:var(--green)}
-.kpi-accent .kpi-value{color:var(--accent)}
-.kpi-yellow .kpi-value{color:var(--yellow)}
-.kpi-red .kpi-value{color:var(--red)}
-
-/* Surge Sites Table */
-.filter-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
-.filter-btn{padding:6px 14px;font-size:11px;font-family:var(--font);background:rgba(0,180,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);cursor:pointer;transition:all 0.2s;letter-spacing:0.5px}
-.filter-btn:hover{background:rgba(0,180,255,0.12);color:var(--text)}
-.filter-btn.active{background:rgba(0,180,255,0.15);border-color:var(--accent);color:var(--accent)}
-.search-box{flex:1;min-width:200px;max-width:360px;padding:6px 12px;font-size:12px;font-family:var(--font);background:#0a1220;border:1px solid var(--border);border-radius:6px;color:var(--text);outline:none;transition:border-color 0.2s}
-.search-box:focus{border-color:var(--accent)}
-.search-box::placeholder{color:var(--text-dim)}
-.site-count{font-size:11px;color:var(--text-dim);margin-left:auto}
-.sites-table-wrap{max-height:480px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--card)}
-.sites-table{width:100%;border-collapse:collapse;font-size:12px}
-.sites-table thead{position:sticky;top:0;z-index:10}
-.sites-table th{background:#0d1a2e;padding:10px 12px;text-align:left;color:var(--accent);font-size:10px;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
-.sites-table td{padding:8px 12px;border-bottom:1px solid rgba(26,42,68,0.5);vertical-align:middle}
-.sites-table tr:hover td{background:rgba(0,180,255,0.04)}
-.sites-table a{color:var(--accent);text-decoration:none}
-.sites-table a:hover{text-decoration:underline}
-.http-dot{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle}
-.http-200{background:var(--green);box-shadow:0 0 6px var(--green)}
-.cat-tag{font-size:9px;padding:2px 8px;border-radius:4px;letter-spacing:0.5px;white-space:nowrap}
-.cat-system{background:rgba(0,180,255,0.12);color:var(--accent);border:1px solid rgba(0,180,255,0.3)}
-.cat-personal{background:rgba(0,255,136,0.1);color:var(--green);border:1px solid rgba(0,255,136,0.25)}
-.cat-verify{background:rgba(255,170,0,0.1);color:var(--yellow);border:1px solid rgba(255,170,0,0.25)}
-.cat-macmini{background:rgba(170,100,255,0.1);color:#aa64ff;border:1px solid rgba(170,100,255,0.25)}
-.cat-test{background:rgba(255,51,68,0.1);color:var(--red);border:1px solid rgba(255,51,68,0.25)}
-.cat-other{background:rgba(200,214,229,0.08);color:var(--text-dim);border:1px solid rgba(200,214,229,0.15)}
-.new-badge{font-size:9px;padding:1px 6px;border-radius:3px;background:var(--red);color:#fff;font-weight:600;letter-spacing:0.5px;margin-left:4px}
-
-/* Schedule Grid */
-.schedule-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
-.day-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all 0.3s;position:relative}
-.day-card:hover{border-color:var(--accent);box-shadow:0 0 16px rgba(0,180,255,0.12);transform:translateY(-2px)}
-.day-card.pass{border-left:3px solid var(--green)}
-.day-card.warn{border-left:3px solid var(--yellow)}
-.day-num{font-size:10px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
-.day-title{font-size:13px;font-weight:600;margin:6px 0 4px;color:var(--text)}
-.day-skills{font-size:10px;color:var(--text-dim);line-height:1.5}
-.day-status{position:absolute;top:12px;right:12px;width:8px;height:8px;border-radius:50%}
-.day-status.pass{background:var(--green);box-shadow:0 0 8px var(--green)}
-.day-status.warn{background:var(--yellow);box-shadow:0 0 8px var(--yellow)}
-
-/* Modal */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(5,10,20,0.85);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-.modal-overlay.show{display:flex}
-.modal-box{background:#0c1a30;border:1px solid var(--accent);border-radius:16px;padding:32px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 0 40px rgba(0,180,255,0.2);position:relative}
-.modal-close{position:absolute;top:12px;right:16px;font-size:24px;color:var(--text-dim);cursor:pointer;background:none;border:none;font-family:var(--font)}
-.modal-close:hover{color:var(--accent)}
-.modal-day{font-size:12px;color:var(--accent);letter-spacing:2px;text-transform:uppercase}
-.modal-title{font-size:20px;font-weight:700;margin:8px 0 16px;color:var(--text)}
-.modal-skill-list{list-style:none}
-.modal-skill-list li{padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-.modal-skill-name{color:var(--accent);font-size:13px}
-.modal-skill-zh{color:var(--text-dim);font-size:11px}
-
-/* Category Readiness */
-.cat-bars{display:flex;flex-direction:column;gap:14px}
-.cat-bar-row{display:flex;align-items:center;gap:12px}
-.cat-bar-label{font-size:11px;min-width:80px;text-align:right;color:var(--text-dim)}
-.cat-bar-track{flex:1;height:20px;background:#0a1220;border-radius:4px;overflow:hidden;position:relative;border:1px solid var(--border)}
-.cat-bar-fill{height:100%;border-radius:3px;transition:width 0.6s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:10px;font-weight:600;color:#050a14}
-.cat-bar-pct{font-size:11px;min-width:36px;color:var(--text)}
-
-/* Radar */
-.radar-wrap{display:flex;justify-content:center;padding:20px 0}
-.radar-svg{max-width:400px;width:100%}
-
-/* Skill Matrix */
-.skill-grid{display:flex;flex-wrap:wrap;gap:8px}
-.skill-chip{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:all 0.2s;display:flex;flex-direction:column;gap:2px}
-.skill-chip:hover{border-color:var(--accent);box-shadow:0 0 12px rgba(0,180,255,0.15)}
-.skill-chip .skill-name{font-size:11px;color:var(--accent)}
-.skill-chip .skill-zh{font-size:9px;color:var(--text-dim)}
-.skill-chip.verified{border-left:2px solid var(--green)}
-.skill-chip.unverified{border-left:2px solid var(--yellow)}
-
-/* System Log */
-.log-box{background:#020810;border:1px solid var(--border);border-radius:10px;padding:16px;max-height:320px;overflow-y:auto;font-size:11px;line-height:1.8;color:var(--green)}
-.log-box .log-ts{color:var(--text-dim)}
-.log-box .log-ok{color:var(--green)}
-.log-box .log-warn{color:var(--yellow)}
-.log-box .log-line{margin-bottom:2px}
-
-/* Footer */
-.footer{text-align:center;padding:32px 0 24px;border-top:1px solid var(--border);margin-top:40px}
-.footer .ft{font-size:11px;color:var(--text-dim);letter-spacing:1px}
-.footer .ft-title{color:var(--accent);font-weight:600;font-size:13px;margin-bottom:8px}
-
-/* Scrollbar */
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:#0a1220}
-::-webkit-scrollbar-thumb{background:#1a2a44;border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--accent)}
-
-/* Responsive */
-@media(max-width:768px){
-  .top-bar{flex-direction:column;align-items:flex-start}
-  .kpi-grid{grid-template-columns:repeat(2,1fr)}
-  .schedule-grid{grid-template-columns:repeat(2,1fr)}
-  .filter-bar{flex-direction:column}
+/* ───────── 設計系統 ───────── */
+:root{
+  --paper:#faf7f0; --ink:#1a1d29; --ink-soft:#4a4e5c; --ink-faint:#8a8d99;
+  --accent:#c45b3c; --accent-deep:#9a3f26; --accent-light:#e8a48c;
+  --navy:#1e2a4a; --sage:#5a7058; --card:#ffffff; --line:#e2ddd0;
+  --code-bg:#22253a; --code-ink:#e8e6f0; --quote-bg:#f2ece0; --story-bg:#eef1ea;
+  --warn-bg:#f7e9e2; --shadow:0 3px 14px rgba(26,29,41,.07);
+  /* 部門色 */
+  --d1:#c45b3c; --d2:#d49a2a; --d3:#8a7ab0; --d4:#4a8fc0; --d5:#5a9a6a;
 }
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Noto Sans TC',sans-serif;
+  background:var(--paper);color:var(--ink);line-height:1.8;font-size:17px;
+}
+.serif{font-family:'Noto Serif TC',serif}
+.code{font-family:'JetBrains Mono',monospace}
+.wrap{max-width:860px;margin:0 auto;padding:0 28px}
+@media(min-width:1280px){.wrap{margin-left:max(280px,calc(50% - 430px))}}
+
+/* ───────── TOC (左側目錄) ───────── */
+#toc{
+  position:fixed;left:24px;top:90px;width:230px;max-height:78vh;overflow-y:auto;
+  font-size:13px;display:none;border-left:2px solid var(--line);padding-left:16px;z-index:50;
+}
+@media(min-width:1280px){#toc{display:block}}
+#toc .toc-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:14px;letter-spacing:.15em;color:var(--accent-deep);margin-bottom:12px}
+#toc a{display:block;color:var(--ink-faint);text-decoration:none;padding:4px 0;line-height:1.5;transition:color .15s}
+#toc a:hover{color:var(--accent)}
+#toc a.lv2{padding-left:14px;font-size:12.5px}
+#toc a.active{color:var(--accent);font-weight:700}
+
+/* ───────── HERO ───────── */
+header.hero{
+  padding:72px 0 48px;border-bottom:3px double var(--line);position:relative;overflow:hidden;
+}
+.skyline{position:absolute;bottom:0;right:0;width:520px;height:300px;opacity:.08;pointer-events:none}
+.kicker{font-size:13px;letter-spacing:.35em;color:var(--accent);font-weight:700;text-transform:uppercase;margin-bottom:18px}
+h1.title{font-family:'Noto Serif TC',serif;font-weight:900;font-size:clamp(34px,5vw,52px);line-height:1.25;margin-bottom:10px}
+.subtitle{font-size:19px;color:var(--ink-soft);margin-bottom:28px}
+.lead{max-width:640px;color:var(--ink-soft);font-size:17px;line-height:1.85}
+.meta-line{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--ink-faint);margin-top:18px}
+.stripe{height:4px;background:linear-gradient(90deg,var(--accent),var(--accent-light),var(--accent));margin-top:28px;border-radius:2px}
+
+/* ───────── NAV ───────── */
+nav.nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(250,247,240,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);padding:12px 0;
+}
+nav.nav .wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+nav.nav .mark{font-weight:700;font-size:14px;color:var(--accent-deep)}
+nav.nav a{color:var(--ink-faint);text-decoration:none;font-size:14px;transition:color .15s;padding:4px 8px;border-radius:4px}
+nav.nav a:hover{color:var(--accent)}
+nav.nav a.active{color:var(--accent);background:rgba(196,91,60,.08);font-weight:500}
+
+/* ───────── SECTION HEADERS ───────── */
+.shead{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:24px;flex-wrap:wrap}
+.idx{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent);letter-spacing:.2em;margin-bottom:6px}
+section h2{font-family:'Noto Serif TC',serif;font-weight:700;font-size:clamp(25px,3.4vw,33px);line-height:1.35}
+.en2{font-size:13px;color:var(--ink-faint);letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+.search{
+  padding:10px 16px;font-size:14px;font-family:inherit;
+  background:var(--card);border:1px solid var(--line);border-radius:8px;
+  color:var(--ink);outline:none;transition:border-color .2s;min-width:220px;
+}
+.search:focus{border-color:var(--accent)}
+
+/* ───────── CARDS / GRIDS ───────── */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:20px;box-shadow:var(--shadow);transition:all .2s;position:relative;overflow:hidden;
+}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-accent, var(--accent));}
+.card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(26,29,41,.1)}
+.card h4{font-size:16px;font-weight:700;margin-bottom:6px;color:var(--ink)}
+.card p{font-size:13.5px;color:var(--ink-soft);line-height:1.7}
+.card .badge{font-size:11px;padding:2px 8px;border-radius:100px;background:rgba(196,91,60,.1);color:var(--accent);display:inline-block;margin-top:8px}
+
+/* ───────── TILES (技能類別磚) ───────── */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.tile{
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:18px 16px;text-align:center;cursor:pointer;transition:all .2s;
+}
+.tile:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow)}
+.tile-icon{font-size:28px;margin-bottom:8px;display:block}
+.tile-name{font-weight:700;font-size:14px;color:var(--ink)}
+.tile-count{font-size:12px;color:var(--ink-faint);margin-top:4px}
+
+/* ───────── STAT GRID ───────── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin:1.5rem 0}
+.stat-card{background:var(--card);padding:1.25rem;border-radius:12px;text-align:center;border:1px solid var(--line);box-shadow:var(--shadow)}
+.stat-card .num{font-size:2.2rem;font-weight:800;color:var(--accent)}
+.stat-card .label{font-size:.82rem;color:var(--ink-faint);margin-top:.3rem}
+
+/* ───────── TABLE ───────── */
+.table-wrap{overflow-x:auto;margin:24px 0;border:1px solid var(--line);border-radius:8px;background:var(--card);box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{background:var(--navy);color:#fff;text-align:left;padding:10px 14px;font-weight:500;font-size:13px;letter-spacing:.5px}
+td{padding:10px 14px;border-bottom:1px solid var(--line);color:var(--ink-soft);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(196,91,60,.03)}
+td code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:#ece7da;padding:1px 6px;border-radius:4px;color:var(--accent-deep)}
+
+/* ───────── HIGHLIGHT BOXES ───────── */
+.pullquote{border-left:4px solid var(--accent);background:var(--quote-bg);padding:22px 26px;margin:28px 0;font-family:'Noto Serif TC',serif;font-size:19px;line-height:1.8;color:var(--ink)}
+.pullquote .en{display:block;font-size:14px;color:var(--ink-faint);margin-top:10px;font-family:'Noto Sans TC',sans-serif}
+.story{background:var(--story-bg);border:1px solid #d8dfd2;padding:20px 24px;margin:24px 0;border-radius:6px}
+.story .tag{font-size:11px;letter-spacing:.25em;font-weight:700;color:var(--sage);text-transform:uppercase;margin-bottom:8px}
+.note{background:var(--warn-bg);border-left:4px solid var(--accent);padding:16px 22px;margin:22px 0;font-size:15.5px;border-radius:0 4px 4px 0}
+.note .tag{font-weight:700;color:var(--accent-deep);margin-right:6px}
+.highlight-box{background:var(--card);border-left:4px solid var(--accent);padding:1.25rem;margin:1.25rem 0;border-radius:0 8px 8px 0;box-shadow:var(--shadow)}
+.highlight-box strong{display:block;margin-bottom:.4rem;color:var(--ink)}
+.highlight-box p{font-size:.92rem;color:var(--ink-soft);margin:0}
+
+/* ───────── ARCH DIAGRAM ───────── */
+.arch-wrap{display:flex;flex-direction:column;gap:0;margin:1.5rem 0}
+.arch-node{background:var(--card);border-radius:8px;padding:1.5rem;border:1px solid var(--line);box-shadow:var(--shadow)}
+.arch-node.nb{border-color:#5a9a6a;border-top:3px solid #5a9a6a}
+.arch-node.cloud{border-color:#4a8fc0;border-top:3px solid #4a8fc0}
+.arch-node h3{font-size:1.1rem;font-weight:700;margin-bottom:.75rem}
+.arch-node.nb h3{color:#5a9a6a}
+.arch-node.cloud h3{color:#4a8fc0}
+.arch-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.75rem}
+.arch-tag{font-size:.7rem;padding:.2rem .6rem;border-radius:100px;background:#f5f2ec;color:var(--ink-faint);border:1px solid var(--line)}
+.arch-arrow{text-align:center;padding:.75rem;font-size:1.4rem;color:var(--ink-faint)}
+.arch-arrow span{font-size:.7rem;display:block;letter-spacing:.1em;margin-top:.2rem}
+
+/* ───────── STUDIO HUB ───────── */
+.studio-hub{background:#f5f2ec;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:2rem}
+.studio-hub-inner{max-width:860px;margin:0 auto}
+.studio-hub-inner h2{font-size:1.4rem;font-weight:700;margin-bottom:.4rem}
+.studio-hub-inner > p{color:var(--ink-faint);font-size:.88rem;margin-bottom:1.25rem}
+.studio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem}
+.studio-card{
+  background:var(--card);border:1px solid var(--line);border-radius:8px;
+  padding:1rem;text-decoration:none;color:var(--ink);
+  display:flex;flex-direction:column;gap:.3rem;transition:all .15s;position:relative;overflow:hidden;
+}
+.studio-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--sc, var(--accent))}
+.studio-card:hover{background:#fff;border-color:var(--sc, var(--accent));transform:translateY(-2px);text-decoration:none;box-shadow:var(--shadow)}
+.studio-card-icon{font-size:1.5rem}
+.studio-card-name{font-weight:700;font-size:.88rem}
+.studio-card-agents{font-size:.72rem;color:var(--ink-faint);line-height:1.4}
+.studio-card-badge{font-size:.6rem;padding:.1rem .4rem;border-radius:3px;background:rgba(196,91,60,.08);color:var(--accent);display:inline-block;margin-top:.2rem;border:1px solid currentColor}
+
+/* ───────── TIMELINE ───────── */
+.timeline{position:relative;padding-left:28px}
+.timeline::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--line)}
+.tl-item{position:relative;padding-bottom:28px}
+.tl-item::before{content:'';position:absolute;left:-28px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--paper)}
+.tl-date{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);margin-bottom:4px}
+.tl-title{font-weight:700;font-size:15px;margin-bottom:4px}
+.tl-desc{font-size:13.5px;color:var(--ink-soft);line-height:1.7}
+
+/* ───────── DEPLOYMENT CARDS ───────── */
+.deploy-group{margin-bottom:2rem}
+.deploy-group h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.deploy-group h3 .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.deploy-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.deploy-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;font-size:13px;transition:all .15s}
+.deploy-card:hover{border-color:var(--accent);box-shadow:var(--shadow)}
+.deploy-card a{color:var(--accent);text-decoration:none;font-weight:500;font-size:13.5px}
+.deploy-card a:hover{text-decoration:underline}
+.deploy-card .meta{font-size:12px;color:var(--ink-faint);margin-top:6px}
+
+/* ───────── SEARCH RESULTS ───────── */
+.result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.75rem;margin-top:1rem}
+.result-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:1rem}
+.result-card:hover{border-color:var(--accent)}
+.result-name{font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:600;color:var(--accent);margin-bottom:.35rem}
+.result-desc{font-size:.82rem;color:var(--ink-soft);margin-bottom:.5rem}
+.result-tags{display:flex;flex-wrap:wrap;gap:.3rem}
+.rtag{font-size:.62rem;padding:.12rem .45rem;border-radius:100px;background:#f5f2ec;color:var(--ink-faint)}
+
+/* ───────── SECTION SPACING ───────── */
+section{padding:54px 0 10px}
+
+/* ───────── FOOTER ───────── */
+footer{margin-top:60px;padding:36px 0 60px;border-top:3px double var(--line);font-size:13.5px;color:var(--ink-faint);text-align:center}
+footer .big{font-family:'Noto Serif TC',serif;font-size:20px;font-weight:700;color:var(--ink);margin-bottom:8px}
+
+/* ───────── DRAWER ───────── */
+.drawer-mask{position:fixed;inset:0;background:rgba(26,29,41,.35);z-index:200;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-mask.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:420px;max-width:92vw;z-index:201;
+  background:var(--paper);border-left:1px solid var(--line);box-shadow:-8px 0 32px rgba(0,0,0,.15);
+  transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column;
+}
+.drawer.open{transform:translateX(0)}
+.dh{padding:1rem 1.1rem;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.dh h3{font-size:1rem;font-weight:700}
+.dh .x{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--ink-faint)}
+.dh .x:hover{color:var(--accent)}
+.dbody{flex:1;overflow-y:auto;padding:1rem 1.1rem}
+
+/* ───────── FLOAT BTN ───────── */
+.float-btn{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;
+  background:var(--accent);color:#fff;border:none;cursor:pointer;
+  padding:.7rem 1.1rem;border-radius:50px;font-size:.82rem;font-weight:700;
+  box-shadow:0 4px 20px rgba(196,91,60,.35);text-decoration:none;
+  display:flex;align-items:center;gap:.4rem;transition:all .2s;
+}
+.float-btn:hover{background:var(--accent-deep);transform:translateY(-2px)}
+
+/* ───────── RESPONSIVE ───────── */
+@media(max-width:600px){
+  .studio-grid{grid-template-columns:repeat(2,1fr)}
+  .cards{grid-template-columns:1fr}
+  .tiles{grid-template-columns:repeat(2,1fr)}
+  .deploy-cards{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:1fr 1fr}
+  .wrap{padding:0 18px}
+  h1.title{font-size:28px}
+  nav.nav .wrap{gap:12px}
+}
+@media(max-width:420px){.drawer{width:100%}}
 </style>
 </head>
 <body>
 
-<!-- Top Status Bar -->
-<div class="top-bar">
-  <div class="top-left">
-    <div class="status-indicator">
-      <div class="status-dot"></div>
-      <span class="status-text">運作正常</span>
+<!-- ═══════════ TOC ═══════════ -->
+<nav id="toc">
+  <div class="toc-title">目錄</div>
+  <a href="#overview">總覽</a>
+  <a href="#studio">Studio 入口</a>
+  <a href="#arch">系統架構</a>
+  <a href="#depts">五部技能庫</a>
+  <a class="lv2" href="#dept1">🔭 情報部</a>
+  <a class="lv2" href="#dept2">🎨 創作部</a>
+  <a class="lv2" href="#dept3">🖥️ 設計部</a>
+  <a class="lv2" href="#dept4">⚙️ 工程部</a>
+  <a class="lv2" href="#dept5">📋 行政部</a>
+  <a href="#mcp">MCP 工具鏈</a>
+  <a href="#deployments">部署站點</a>
+  <a href="#schedule">驗證排程</a>
+  <a href="#updates">更新週誌</a>
+</nav>
+
+<!-- ═══════════ HERO ═══════════ -->
+<header class="hero">
+  <svg class="skyline" viewBox="0 0 520 300" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g fill="#c45b3c" fill-opacity="0.10">
+      <rect x="20" y="120" width="60" height="180"/><rect x="95" y="70" width="70" height="230"/>
+      <rect x="180" y="150" width="50" height="150"/><rect x="245" y="40" width="80" height="260"/>
+      <rect x="340" y="100" width="60" height="200"/><rect x="415" y="160" width="70" height="140"/>
+    </g>
+    <g fill="#1a1d29" fill-opacity="0.06">
+      <rect x="260" y="60" width="12" height="12"/><rect x="285" y="60" width="12" height="12"/>
+      <rect x="260" y="90" width="12" height="12"/><rect x="285" y="90" width="12" height="12"/>
+      <rect x="110" y="95" width="12" height="12"/><rect x="135" y="95" width="12" height="12"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <div class="kicker">ECOSYSTEM WARROOM</div>
+    <h1 class="title serif">AI 生態戰情室</h1>
+    <p class="subtitle">個人 AI 技能生態系統總覽 — 部署、技能、架構與監控的視覺化登記簿</p>
+    <p class="lead">這是我的 AI 工具與技能生態系統的中央儀表板。涵蓋 Hermes 技能庫、Studio 多 Agent 協作、MCP 工具鏈、Surge 部署監控與技能驗證排程。每週自動更新一次。</p>
+    <div class="meta-line" id="metaLine">載入中…</div>
+    <div class="stripe"></div>
+  </div>
+</header>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav"><div class="wrap">
+  <span class="mark">🏢 生態戰情室</span>
+  <a href="#overview" class="active">總覽</a>
+  <a href="#studio">Studio</a>
+  <a href="#arch">架構</a>
+  <a href="#depts">技能庫</a>
+  <a href="#deployments">部署</a>
+  <a href="#schedule">排程</a>
+  <a href="#updates">週誌</a>
+</div></nav>
+
+<main class="wrap">
+
+<!-- ═══════════ SECTION 0: 總覽 ═══════════ -->
+<section id="overview">
+  <div class="shead reveal">
+    <div><div class="idx">00 — 生態總覽</div><h2>系統核心指標</h2><div class="en2">SYSTEM OVERVIEW</div></div>
+  </div>
+  <div class="stat-grid reveal">
+    <div class="stat-card"><div class="num">123</div><div class="label">技能總數</div></div>
+    <div class="stat-card"><div class="num">9</div><div class="label">MCP 伺服器</div></div>
+    <div class="stat-card"><div class="num">5</div><div class="label">部門分類</div></div>
+    <div class="stat-card"><div class="num">76</div><div class="label">MCP 工具</div></div>
+    <div class="stat-card"><div class="num">90</div><div class="label">Surge 站點</div></div>
+    <div class="stat-card"><div class="num">6</div><div class="label">Studio 部門</div></div>
+  </div>
+
+  <div class="story reveal">
+    <div class="tag">系統敘事</div>
+    <p>這不是一份靜態文件，而是一個<strong>活的生態系統</strong>。從最初的一台筆電 + Claude CLI，到現在 NB/WSL2 + Cloud MCP 雙節點、Mac Mini M2 獨立 Discord 節點、Contains Studio 六部門 AI Agent，整個系統經歷了數個月的演化與迭代。</p>
+    <p>核心哲學只有一條：<strong>「把任務說清楚，系統幫你找技能。」</strong>每個技能都是一個獨立的執行單位（Skill），像樂高積木一樣可以組合、替換、升級。當任務來了，系統會自動比對 122+ 個技能的功能標籤，找到最適合的組合。</p>
+  </div>
+</section>
+
+<!-- ═══════════ SECTION: STUDIO ═══════════ -->
+<section id="studio">
+  <div class="shead reveal"><div><div class="idx">01 — Studio 協作入口</div><h2>Contains Studio — 六部門 AI Agent</h2><div class="en2">MULTI-AGENT WORKSPACE</div></div></div>
+  <div class="studio-hub reveal">
+    <div class="studio-hub-inner">
+      <p>從快速原型到營運自動化，與 Hermes 技能互補協作。對話規劃 → Studio Agent ｜ 執行自動化 → Hermes Skill</p>
+      <div class="studio-grid">
+        <a href="https://agents.jeffwang.work/" target="_blank" class="studio-card" style="--sc:#4a8fc0">
+          <div class="studio-card-icon">🔧</div><div class="studio-card-name">工程部</div>
+          <div class="studio-card-agents">快速原型師 · 後端架構師 · 前端開發者 · CI/CD · 測試修復</div><span class="studio-card-badge">5 agents</span>
+        </a>
+        <a href="https://agents.jeffwang.work/" target="_blank" class="studio-card" style="--sc:#8a7ab0">
+          <div class="studio-card-icon">🎨</div><div class="studio-card-name">設計部</div>
+          <div class="studio-card-agents">UX設計 · 使用者洞察 · 品牌守護者 · 視覺敘事師</div><span class="studio-card-badge">4 agents</span>
+        </a>
+        <a href="https://agents.jeffwang.work/" target="_blank" class="studio-card" style="--sc:#d49a2a">
+          <div class="studio-card-icon">📣</div><div class="studio-card-name">行銷部</div>
+          <div class="studio-card-agents">成長駭客 · 內容創作者 · 趨勢研究員 · ASO優化師</div><span class="studio-card-badge">4 agents</span>
+        </a>
+        <a href="https://agents.jeffwang.work/" target="_blank" class="studio-card" style="--sc:#c45b3c">
+          <div class="studio-card-icon">💡</div><div class="studio-card-name">產品部</div>
+          <div class="studio-card-agents">趨勢研究員 · 回饋整合師 · Sprint規劃師</div><span class="studio-card-badge">3 agents</span>
+        </a>
+        <a href="https://agents.jeffwang.work/" target="_blank" class="studio-card" style="--sc:#5a9a6a">
+          <div class="studio-card-icon">📋</div><div class="studio-card-name">專案管理</div>
+          <div class="studio-card-agents">專案交付師 · 工作室製作人 · 實驗追蹤師</div><span class="studio-card-badge">3 agents</span>
+        </a>
+        <a href="https://agents.jeffwang.work/" target="_blank" class="studio-card" style="--sc:#5a9a6a">
+          <div class="studio-card-icon">⚙️</div><div class="studio-card-name">營運部</div>
+          <div class="studio-card-agents">數據分析 · 財務追蹤 · 基礎設施 · 法規合規 · 客服</div><span class="studio-card-badge">5 agents</span>
+        </a>
+      </div>
     </div>
-    <span class="top-title">HERMES 戰情室</span>
   </div>
-  <div class="top-right">
-    <span class="stat-pill" id="statSites">🏄 90 站點</span>
-    <span class="stat-pill" id="statSkills">⚡ 38 技能</span>
-    <span class="clock" id="clock">--:--:--</span>
+</section>
+
+<!-- ═══════════ SECTION: ARCH ═══════════ -->
+<section id="arch">
+  <div class="shead reveal"><div><div class="idx">02 — 系統架構</div><h2>雙節點架構圖</h2><div class="en2">NB/WSL2 + CLOUD MCP</div></div></div>
+  <div class="highlight-box reveal">
+    <strong>作業邊界說明</strong>
+    <p>霹靂貓（Claude Code）的作業範疇僅限以下兩個節點。Mac Mini M2 是獨立的 Discord 節點，運行 CyberMeow / 24H 小貓，不在本架構內。</p>
   </div>
-</div>
-
-<div class="container">
-
-<!-- KPI Cards -->
-<div class="kpi-grid">
-  <div class="kpi-card kpi-accent">
-    <div class="kpi-label">Surge 站點總數</div>
-    <div class="kpi-value" id="kpiTotal">90</div>
-    <div class="kpi-sub">已部署站點</div>
+  <div class="arch-wrap reveal">
+    <div class="arch-node nb">
+      <h3>💻 NB / WSL2 (Ubuntu-Ext · E:\WSL)</h3>
+      <p style="font-size:.9rem;color:var(--ink-faint)">主工程執行節點 · Python 3.14 · Node v24+</p>
+      <div style="margin-top:1rem;font-size:.88rem;display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div>🤖 <strong>Julia / Hermes</strong> v0.8.0<br><span style="color:var(--ink-faint);font-size:.78rem">Discord Gateway · systemd · 122 skills</span></div>
+        <div>🐱 <strong>霹靂貓</strong><br><span style="color:var(--ink-faint);font-size:.78rem">Claude Code CLI v2.1 · OAuth/Max</span></div>
+        <div>🧠 <strong>MemPalace</strong> v3.3.0<br><span style="color:var(--ink-faint);font-size:.78rem">ChromaDB · 4312 抽屜 · MCP 掛載</span></div>
+        <div>🛡️ <strong>ATR Hook</strong><br><span style="color:var(--ink-faint);font-size:.78rem">7 rules · agent:start 掃描</span></div>
+      </div>
+      <div class="arch-tags">
+        <span class="arch-tag">Python 3.14</span><span class="arch-tag">Node v24</span><span class="arch-tag">Go 1.26</span>
+        <span class="arch-tag">Brew 5.1</span><span class="arch-tag">systemd</span><span class="arch-tag">WSL2</span>
+      </div>
+    </div>
+    <div class="arch-arrow">⟺<span>MCP Bridge · claude.ai + Vercel Plugin</span></div>
+    <div class="arch-node cloud">
+      <h3>☁️ Cloud MCP (9 servers · 76 tools)</h3>
+      <p style="font-size:.9rem;color:var(--ink-faint)">claude.ai 橋接 + Vercel Plugin · 即時連線</p>
+      <div style="margin-top:1rem;display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;font-size:.82rem">
+        <div>📝 Notion <span style="color:var(--ink-faint)">14</span></div>
+        <div>📧 Gmail <span style="color:var(--ink-faint)">12</span></div>
+        <div>🚀 Vercel <span style="color:var(--ink-faint)">18</span></div>
+        <div>📅 GCal <span style="color:var(--ink-faint)">8</span></div>
+        <div>📁 GDrive <span style="color:var(--ink-faint)">8</span></div>
+        <div>🎨 Gamma <span style="color:var(--ink-faint)">7</span></div>
+        <div>🧠 MemPalace <span style="color:var(--ink-faint)">5</span></div>
+        <div>⚡ Zapier <span style="color:var(--ink-faint)">2</span></div>
+        <div>💬 Intercom <span style="color:var(--ink-faint)">2</span></div>
+      </div>
+    </div>
   </div>
-  <div class="kpi-card kpi-green">
-    <div class="kpi-label">HTTP 200 數</div>
-    <div class="kpi-value" id="kpi200">90</div>
-    <div class="kpi-sub">全部正常回應</div>
+</section>
+
+<!-- ═══════════ SECTION: 五部技能庫 ═══════════ -->
+<section id="depts">
+  <div class="shead reveal"><div><div class="idx">03 — 技能使用庫</div><h2>五部門技能總覽</h2><div class="en2">SKILL LIBRARY · 點擊類別展開</div></div>
+    <input class="search" data-target="skills" type="search" placeholder="搜尋技能…" id="skillSearch" />
   </div>
-  <div class="kpi-card kpi-yellow">
-    <div class="kpi-label">技能驗證通過</div>
-    <div class="kpi-value" id="kpiPass">4</div>
-    <div class="kpi-sub">/ 14 天排程</div>
+
+  <!-- 情報部 -->
+  <div class="reveal" id="dept1" style="margin-bottom:48px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="width:12px;height:12px;border-radius:50%;background:var(--d1);display:inline-block"></span>
+      <h3 style="font-size:1.15rem;font-weight:700">DEPT 01 · 情報部 — 研究、財經、新聞、輿情</h3>
+      <span style="font-size:12px;color:var(--ink-faint);margin-left:auto">17 技能</span>
+    </div>
+    <div class="highlight-box" style="border-left-color:var(--d1)">
+      <strong>部門職責</strong>
+      <p>負責資訊蒐集、市場情報、學術研究、新聞監控。從台股技術分析到 arXiv 論文搜尋，是系統的「眼睛和耳朵」。</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>技能</th><th>功能</th><th>產業</th><th>職務</th></tr>
+        <tr><td><code>arxiv</code></td><td>arXiv 學術論文搜尋</td><td>研究</td><td>研究員</td></tr>
+        <tr><td><code>autoresearch</code></td><td>多輪自動深度研究</td><td>研究</td><td>研究員</td></tr>
+        <tr><td><code>blogwatcher</code></td><td>部落格/文章更新追蹤</td><td>媒體/研究</td><td>研究員</td></tr>
+        <tr><td><code>llm-wiki</code></td><td>LLM 知識庫查詢</td><td>AI/科技</td><td>AI工程師</td></tr>
+        <tr><td><code>polymarket</code></td><td>預測市場概率分析</td><td>金融</td><td>分析師/交易員</td></tr>
+        <tr><td><code>news-briefing</code></td><td>每日新聞摘要生成</td><td>媒體</td><td>行政/PM</td></tr>
+        <tr><td><code>rss-monitor</code></td><td>RSS 訂閱監控</td><td>媒體</td><td>研究員</td></tr>
+        <tr><td><code>site-watchdog</code></td><td>網頁內容變化偵測</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>social-radar</code></td><td>社群輿情雷達分析</td><td>社群/行銷</td><td>分析師</td></tr>
+        <tr><td><code>tw-market-summary</code></td><td>台股大盤日報</td><td>金融</td><td>交易員/分析師</td></tr>
+        <tr><td><code>tw-dividend-calendar</code></td><td>台股除權息行事曆</td><td>金融</td><td>交易員</td></tr>
+        <tr><td><code>stock-breakout-analysis</code></td><td>股票技術突破選股</td><td>金融</td><td>交易員/分析師</td></tr>
+        <tr><td><code>stock-analysis</code></td><td>個股技術指標分析</td><td>金融</td><td>分析師</td></tr>
+        <tr><td><code>crypto-monitor</code></td><td>加密貨幣價格監控</td><td>金融/科技</td><td>交易員</td></tr>
+        <tr><td><code>earnings-calendar</code></td><td>財報發布行事曆</td><td>金融</td><td>分析師</td></tr>
+        <tr><td><code>youtube-content</code></td><td>YouTube 影片摘要分析</td><td>媒體</td><td>研究員/創作者</td></tr>
+      </table>
+    </div>
   </div>
-  <div class="kpi-card kpi-green">
-    <div class="kpi-label">異常數</div>
-    <div class="kpi-value" id="kpiError">0</div>
-    <div class="kpi-sub">零異常</div>
+
+  <!-- 創作部 -->
+  <div class="reveal" id="dept2" style="margin-bottom:48px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="width:12px;height:12px;border-radius:50%;background:var(--d2);display:inline-block"></span>
+      <h3 style="font-size:1.15rem;font-weight:700">DEPT 02 · 創作部 — 視覺、媒體、簡報、內容</h3>
+      <span style="font-size:12px;color:var(--ink-faint);margin-left:auto">19 技能</span>
+    </div>
+    <div class="highlight-box" style="border-left-color:var(--d2)">
+      <strong>部門職責</strong>
+      <p>負責一切視覺產出與內容製作：動畫、ASCII 藝術、資料視覺化、簡報、PDF、音樂創作。是系統的「右腦創意中樞」。</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>技能</th><th>功能</th><th>產業</th><th>職務</th></tr>
+        <tr><td><code>ascii-art</code></td><td>ASCII 文字藝術生成</td><td>設計/科技</td><td>創作者</td></tr>
+        <tr><td><code>ascii-video</code></td><td>影片轉 ASCII 動畫</td><td>媒體</td><td>創作者</td></tr>
+        <tr><td><code>manim-video</code></td><td>數學/教學動畫製作</td><td>教育/媒體</td><td>創作者</td></tr>
+        <tr><td><code>p5js</code></td><td>p5.js 互動視覺創作</td><td>設計/科技</td><td>設計師</td></tr>
+        <tr><td><code>excalidraw</code></td><td>手繪風格流程圖/白板</td><td>設計/工程</td><td>設計師/PM</td></tr>
+        <tr><td><code>songwriting-and-ai-music</code></td><td>AI 詞曲創作</td><td>媒體</td><td>創作者</td></tr>
+        <tr><td><code>hallmark</code></td><td>精美 HTML 卡片/網頁</td><td>設計</td><td>設計師</td></tr>
+        <tr><td><code>hallmark-nextjs-redesign</code></td><td>Next.js 現代化改版</td><td>設計/科技</td><td>設計師</td></tr>
+        <tr><td><code>popular-web-designs</code></td><td>熱門網頁設計參考</td><td>設計</td><td>設計師</td></tr>
+        <tr><td><code>reference-driven-redesign</code></td><td>參考設計重製復刻</td><td>設計</td><td>設計師</td></tr>
+        <tr><td><code>data-viz</code></td><td>資料視覺化圖表</td><td>分析/設計</td><td>分析師/設計師</td></tr>
+        <tr><td><code>powerpoint</code></td><td>PowerPoint 簡報生成</td><td>行政/行銷</td><td>PM/行政</td></tr>
+        <tr><td><code>work-presentation-maker</code></td><td>工作/商業提案簡報</td><td>行銷</td><td>PM</td></tr>
+        <tr><td><code>nano-pdf</code></td><td>PDF 文件生成輸出</td><td>行政</td><td>行政/PM</td></tr>
+        <tr><td><code>ocr-and-documents</code></td><td>OCR 文字辨識/文件解析</td><td>行政</td><td>行政</td></tr>
+        <tr><td><code>gif-search</code></td><td>GIF 動態圖搜尋</td><td>社群</td><td>創作者</td></tr>
+        <tr><td><code>heartmula</code></td><td>音頻視覺化工具</td><td>媒體</td><td>創作者</td></tr>
+        <tr><td><code>songsee</code></td><td>音樂歌詞視覺展示</td><td>媒體</td><td>創作者</td></tr>
+        <tr><td><code>xitter</code></td><td>X/Twitter 社群發文</td><td>社群/行銷</td><td>創作者</td></tr>
+      </table>
+    </div>
   </div>
-</div>
 
-<!-- Surge Sites Overview -->
-<div class="section-title">Surge 站點總覽</div>
-<div class="filter-bar">
-  <button class="filter-btn active" data-cat="all">全部</button>
-  <button class="filter-btn" data-cat="system">系統工具</button>
-  <button class="filter-btn" data-cat="personal">個人專案</button>
-  <button class="filter-btn" data-cat="verify">技能驗證</button>
-  <button class="filter-btn" data-cat="macmini">Mac Mini</button>
-  <button class="filter-btn" data-cat="test">測試站</button>
-  <button class="filter-btn" data-cat="other">其他</button>
-  <input class="search-box" id="siteSearch" placeholder="🔍 搜尋站點名稱..." />
-  <span class="site-count" id="siteCount">90 站點</span>
-</div>
-<div class="sites-table-wrap">
-  <table class="sites-table">
-    <thead><tr><th>站點名稱</th><th>URL</th><th>天數</th><th>HTTP</th><th>分類</th><th></th></tr></thead>
-    <tbody id="sitesTbody"></tbody>
-  </table>
-</div>
-
-<!-- 14-Day Skill Verification Schedule -->
-<div class="section-title">14天技能驗證排程</div>
-<div class="schedule-grid" id="scheduleGrid"></div>
-
-<!-- Category Readiness -->
-<div class="section-title">分類戰備狀態</div>
-<div class="cat-bars" id="catBars"></div>
-
-<!-- Radar Chart -->
-<div class="section-title">能力雷達圖</div>
-<div class="radar-wrap">
-  <svg class="radar-svg" viewBox="0 0 400 400" id="radarSvg"></svg>
-</div>
-
-<!-- Skill Status Matrix -->
-<div class="section-title">技能狀態矩陣</div>
-<div class="skill-grid" id="skillGrid"></div>
-
-<!-- System Log -->
-<div class="section-title">系統日誌</div>
-<div class="log-box" id="logBox"></div>
-
-</div><!-- container -->
-
-<!-- Modal -->
-<div class="modal-overlay" id="modal">
-  <div class="modal-box">
-    <button class="modal-close" id="modalClose">&times;</button>
-    <div class="modal-day" id="modalDay"></div>
-    <div class="modal-title" id="modalTitle"></div>
-    <ul class="modal-skill-list" id="modalSkills"></ul>
+  <!-- 設計部 -->
+  <div class="reveal" id="dept3" style="margin-bottom:48px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="width:12px;height:12px;border-radius:50%;background:var(--d3);display:inline-block"></span>
+      <h3 style="font-size:1.15rem;font-weight:700">DEPT 03 · 設計部 — 部署、儀表板、網頁工具</h3>
+      <span style="font-size:12px;color:var(--ink-faint);margin-left:auto">13 技能</span>
+    </div>
+    <div class="highlight-box" style="border-left-color:var(--d3)">
+      <strong>部門職責</strong>
+      <p>負責靜態網站部署（Surge/Netlify）、儀表板維護、CSS 設計工具。把設計稿變成上線網址是這個部門的核心能力。</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>技能</th><th>功能</th><th>產業</th><th>職務</th></tr>
+        <tr><td><code>html-to-public-url</code></td><td>HTML 快速轉公開網址</td><td>設計/科技</td><td>設計師/全端</td></tr>
+        <tr><td><code>surge-deploy-safe</code></td><td>Surge.sh 安全部署</td><td>設計/科技</td><td>DevOps</td></tr>
+        <tr><td><code>static-site-deploy-surgesite</code></td><td>靜態網站 Surge 部署</td><td>設計</td><td>DevOps</td></tr>
+        <tr><td><code>static-site-deploy-netlify-or-surge</code></td><td>Netlify / Surge 部署選擇</td><td>設計</td><td>DevOps</td></tr>
+        <tr><td><code>modify-html-css-and-surge-deploy</code></td><td>修改 HTML/CSS 後部署</td><td>設計</td><td>設計師/DevOps</td></tr>
+        <tr><td><code>css-warm-palette</code></td><td>暖色調 CSS 配色方案</td><td>設計</td><td>設計師</td></tr>
+        <tr><td><code>surge-dashboard-update</code></td><td>Surge 儀表板內容更新</td><td>設計</td><td>DevOps</td></tr>
+        <tr><td><code>surge-post-deployment-review</code></td><td>部署後網站品質審查</td><td>設計</td><td>DevOps</td></tr>
+        <tr><td><code>warroom-dashboard</code></td><td>戰情室 Dashboard 生成</td><td>科技</td><td>DevOps/PM</td></tr>
+        <tr><td><code>daily-dashboard</code></td><td>每日儀表板生成</td><td>行政</td><td>PM/DevOps</td></tr>
+        <tr><td><code>daily-dashboard-update</code></td><td>儀表板自動更新</td><td>行政</td><td>DevOps</td></tr>
+        <tr><td><code>mermaid-diagrams</code></td><td>Mermaid 架構/流程圖</td><td>工程/設計</td><td>工程師/設計師</td></tr>
+        <tr><td><code>sketchup-mcp</code></td><td>SketchUp 3D 建模 MCP</td><td>設計</td><td>設計師</td></tr>
+      </table>
+    </div>
   </div>
-</div>
 
-<!-- Footer -->
-<div class="container">
-  <div class="footer">
-    <div class="ft-title">⚡ 技能指揮中心 — Hermes Monitor</div>
-    <div class="ft">最後更新：<span id="footerTime"></span> &nbsp;|&nbsp; 週期：14天 &nbsp;|&nbsp; 監控數：<span id="footerCount">90 站點 + 38 技能</span></div>
+  <!-- 工程部 -->
+  <div class="reveal" id="dept4" style="margin-bottom:48px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="width:12px;height:12px;border-radius:50%;background:var(--d4);display:inline-block"></span>
+      <h3 style="font-size:1.15rem;font-weight:700">DEPT 04 · 工程部 — 開發、代理、MLOps、GitHub</h3>
+      <span style="font-size:12px;color:var(--ink-faint);margin-left:auto">35 技能</span>
+    </div>
+    <div class="highlight-box" style="border-left-color:var(--d4)">
+      <strong>部門職責</strong>
+      <p>軟體開發流程、AI 代理協作、ML 模型訓練推論、GitHub 工作流、自動化測試。是系統最龐大的技術核心。</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>技能</th><th>功能</th><th>產業</th><th>職務</th></tr>
+        <tr><td colspan="4" style="color:var(--d4);font-size:.75rem;font-weight:600;padding:.75rem 1rem .25rem;letter-spacing:.05em">── 軟體開發 ──</td></tr>
+        <tr><td><code>plan</code></td><td>任務規劃與工作分解</td><td>工程</td><td>工程師/PM</td></tr>
+        <tr><td><code>writing-plans</code></td><td>計劃書與規格文件撰寫</td><td>工程</td><td>工程師</td></tr>
+        <tr><td><code>test-driven-development</code></td><td>TDD 測試驅動開發</td><td>工程</td><td>工程師</td></tr>
+        <tr><td><code>systematic-debugging</code></td><td>系統性除錯排查</td><td>工程</td><td>工程師</td></tr>
+        <tr><td><code>requesting-code-review</code></td><td>程式碼安全掃描審查</td><td>工程</td><td>工程師</td></tr>
+        <tr><td><code>subagent-driven-development</code></td><td>子代理驅動開發模式</td><td>AI/工程</td><td>AI工程師</td></tr>
+        <tr><td colspan="4" style="color:var(--d4);font-size:.75rem;font-weight:600;padding:.75rem 1rem .25rem;letter-spacing:.05em">── GitHub ──</td></tr>
+        <tr><td><code>codebase-inspection</code></td><td>程式碼庫全面分析</td><td>工程</td><td>工程師</td></tr>
+        <tr><td><code>github-auth</code></td><td>GitHub 認證 Token 設定</td><td>工程</td><td>DevOps</td></tr>
+        <tr><td><code>github-code-review</code></td><td>GitHub PR 程式碼審查</td><td>工程</td><td>工程師</td></tr>
+        <tr><td><code>github-issues</code></td><td>GitHub Issue 管理</td><td>工程</td><td>工程師/PM</td></tr>
+        <tr><td><code>github-pr-workflow</code></td><td>PR 工作流提交合併</td><td>工程</td><td>工程師</td></tr>
+        <tr><td><code>github-repo-management</code></td><td>倉庫設定與管理</td><td>工程</td><td>DevOps</td></tr>
+        <tr><td colspan="4" style="color:var(--d4);font-size:.75rem;font-weight:600;padding:.75rem 1rem .25rem;letter-spacing:.05em">── AI 代理 ──</td></tr>
+        <tr><td><code>claude-code</code></td><td>Claude Code 工程任務委派</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td><code>codex</code></td><td>OpenAI Codex 代理</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td><code>opencode</code></td><td>OpenCode 開源代理</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td><code>multi-agent-orchestration</code></td><td>多代理協調任務分配</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td><code>openclaw-inspection</code></td><td>代理系統自省分析</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td><code>pili-cat</code></td><td>霹靂貓工程任務執行</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td><code>hermes-agent</code></td><td>Hermes 系統管理</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td colspan="4" style="color:var(--d4);font-size:.75rem;font-weight:600;padding:.75rem 1rem .25rem;letter-spacing:.05em">── MLOps ──</td></tr>
+        <tr><td><code>training</code></td><td>模型訓練 Fine-tune</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td><code>inference</code></td><td>本地模型推論執行</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td><code>evaluation</code></td><td>模型評估效能測試</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td><code>huggingface-hub</code></td><td>HuggingFace 模型下載管理</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td><code>vector-databases</code></td><td>向量資料庫嵌入搜尋</td><td>AI/工程</td><td>AI工程師</td></tr>
+        <tr><td><code>cloud</code></td><td>雲端 ML 部署</td><td>AI</td><td>DevOps/AI工程師</td></tr>
+        <tr><td><code>models</code></td><td>模型版本管理</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td><code>mempalace-mlops</code></td><td>MemPalace MLOps 整合</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td><code>research-mlops</code></td><td>ML 研究輔助</td><td>AI</td><td>研究員</td></tr>
+        <tr><td colspan="4" style="color:var(--d4);font-size:.75rem;font-weight:600;padding:.75rem 1rem .25rem;letter-spacing:.05em">── 自動化 ──</td></tr>
+        <tr><td><code>webwright</code></td><td>Playwright 瀏覽器自動化</td><td>工程</td><td>工程師/DevOps</td></tr>
+        <tr><td><code>web-scraper</code></td><td>網頁爬蟲資料抓取</td><td>工程/研究</td><td>工程師/分析師</td></tr>
+        <tr><td><code>ai-trend-monitor</code></td><td>AI 趨勢關鍵字監控</td><td>研究/科技</td><td>研究員/DevOps</td></tr>
+        <tr><td><code>jupyter-live-kernel</code></td><td>Jupyter Notebook 即時核心</td><td>資料科學</td><td>分析師</td></tr>
+        <tr><td><code>discord-bridge-attachment-fix</code></td><td>Discord 橋接附件修復</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>webhook-subscriptions</code></td><td>Webhook 事件訂閱</td><td>工程</td><td>DevOps</td></tr>
+        <tr><td><code>godmode</code></td><td>紅隊滲透安全測試</td><td>資安</td><td>工程師</td></tr>
+      </table>
+    </div>
   </div>
-</div>
+
+  <!-- 行政部 -->
+  <div class="reveal" id="dept5" style="margin-bottom:48px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="width:12px;height:12px;border-radius:50%;background:var(--d5);display:inline-block"></span>
+      <h3 style="font-size:1.15rem;font-weight:700">DEPT 05 · 行政部 — 生產力、記憶、系統、生活</h3>
+      <span style="font-size:12px;color:var(--ink-faint);margin-left:auto">39 技能</span>
+    </div>
+    <div class="highlight-box" style="border-left-color:var(--d5)">
+      <strong>部門職責</strong>
+      <p>系統的後勤保障：Google Workspace 整合、記憶庫維護、排程管理、日常生產力工具、Apple 生態整合，以及讓生活更智慧的各種技能。</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>技能</th><th>功能</th><th>產業</th><th>職務</th></tr>
+        <tr><td colspan="4" style="color:var(--d5);font-size:.75rem;font-weight:600;padding:.75rem 1rem .25rem;letter-spacing:.05em">── 協作工具 ──</td></tr>
+        <tr><td><code>google-workspace</code></td><td>Google 文件/試算表/Gmail</td><td>行政</td><td>行政/PM</td></tr>
+        <tr><td><code>himalaya</code></td><td>CLI 郵件管理客戶端</td><td>行政</td><td>行政</td></tr>
+        <tr><td><code>obsidian</code></td><td>Obsidian 知識管理筆記</td><td>研究</td><td>研究員/PM</td></tr>
+        <tr><td><code>notion</code></td><td>Notion 協作文件</td><td>行政</td><td>PM/行政</td></tr>
+        <tr><td><code>linear</code></td><td>Linear 專案/Issue 管理</td><td>工程</td><td>PM/工程師</td></tr>
+        <tr><td colspan="4" style="color:var(--d5);font-size:.75rem;font-weight:600;padding:.75rem 1rem .25rem;letter-spacing:.05em">── 系統/記憶 ──</td></tr>
+        <tr><td><code>claude-auth-status</code></td><td>Claude 授權狀態檢查</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>claude-code-custom-commands</code></td><td>自訂 Claude Code 指令</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>claude-code-env-audit</code></td><td>Claude Code 環境稽核</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>mempalace-daily-skill-verify</code></td><td>每日技能驗證記憶寫入</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>mempalace-diary-write</code></td><td>MemPalace 日記寫入</td><td>科技</td><td>行政</td></tr>
+        <tr><td><code>mempalace-weekly-maintenance</code></td><td>記憶庫每週維護</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>hermes-memory-hygiene</code></td><td>Hermes 記憶清理整理</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td colspan="4" style="color:var(--d5);font-size:.75rem;font-weight:600;padding:.75rem 1rem .25rem;letter-spacing:.05em">── 驗證/排程 ──</td></tr>
+        <tr><td><code>daily-skill-verification</code></td><td>每日技能驗證主程序</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>daily-skill-verify</code></td><td>技能驗證執行腳本</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>daily-skill-verify-run</code></td><td>單次驗證執行</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>daily-skill-verification-deploy</code></td><td>驗證報告部署</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>cronjob-modify-schedule</code></td><td>修改 Cron 排程</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>cronjob-reschedule</code></td><td>重新安排 Cron 任務</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td colspan="4" style="color:var(--d5);font-size:.75rem;font-weight:600;padding:.75rem 1rem .25rem;letter-spacing:.05em">── 生產力 ──</td></tr>
+        <tr><td><code>project-workflow</code></td><td>專案工作流管理</td><td>行政</td><td>PM</td></tr>
+        <tr><td><code>prompt-master</code></td><td>Prompt 工程與優化</td><td>AI</td><td>AI工程師</td></tr>
+        <tr><td><code>technical-report-delivery</code></td><td>技術報告生成交付</td><td>工程</td><td>工程師</td></tr>
+        <tr><td><code>comprehensive-technical-solution-design</code></td><td>完整技術方案設計</td><td>工程</td><td>工程師/PM</td></tr>
+        <tr><td><code>catbox-upload</code></td><td>Catbox 檔案快速上傳</td><td>科技</td><td>全端</td></tr>
+        <tr><td><code>weekly-report-generator</code></td><td>每週工作報告生成</td><td>行政</td><td>PM/行政</td></tr>
+        <tr><td><code>weekly-surge-dashboard-plans</code></td><td>週度儀表板計劃</td><td>行政</td><td>PM</td></tr>
+        <tr><td><code>daily-insight-summary</code></td><td>每日洞察摘要</td><td>行政</td><td>PM/分析師</td></tr>
+        <tr><td><code>mcporter</code></td><td>MCP 工具管理與配置</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>native-mcp</code></td><td>原生 MCP 設定</td><td>科技</td><td>DevOps</td></tr>
+        <tr><td><code>collaborative-vote-nextjs-firebase</code></td><td>Firebase 投票應用</td><td>科技</td><td>全端</td></tr>
+        <tr><td colspan="4" style="color:var(--d5);font-size:.75rem;font-weight:600;padding:.75rem 1rem .25rem;letter-spacing:.05em">── Apple 生態 ──</td></tr>
+        <tr><td><code>apple-notes</code></td><td>Apple 筆記整合</td><td>生活</td><td>行政</td></tr>
+        <tr><td><code>apple-reminders</code></td><td>Apple 提醒事項</td><td>生活</td><td>行政</td></tr>
+        <tr><td><code>findmy</code></td><td>Find My 裝置定位</td><td>生活</td><td>行政</td></tr>
+        <tr><td><code>imessage</code></td><td>iMessage 發送整合</td><td>生活</td><td>行政</td></tr>
+        <tr><td colspan="4" style="color:var(--d5);font-size:.75rem;font-weight:600;padding:.75rem 1rem .25rem;letter-spacing:.05em">── 生活 ──</td></tr>
+        <tr><td><code>find-nearby</code></td><td>附近地點搜尋（餐廳/商店）</td><td>生活</td><td>全端</td></tr>
+        <tr><td><code>find-nearby-pwa</code></td><td>附近搜尋 PWA 應用</td><td>生活</td><td>全端</td></tr>
+        <tr><td><code>openhue</code></td><td>Philips Hue 智慧燈光控制</td><td>生活</td><td>行政</td></tr>
+        <tr><td><code>minecraft-modpack-server</code></td><td>Minecraft 模組伺服器</td><td>生活</td><td>全端</td></tr>
+        <tr><td><code>pokemon-player</code></td><td>寶可夢遊戲代理</td><td>生活</td><td>全端</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ SECTION: MCP ═══════════ -->
+<section id="mcp">
+  <div class="shead reveal"><div><div class="idx">04 — MCP 工具鏈</div><h2>連接真實世界的手和腳</h2><div class="en2">MODEL CONTEXT PROTOCOL SERVERS</div></div></div>
+  <div class="highlight-box reveal" style="border-left-color:#5a9a6a">
+    <strong>連線架構</strong>
+    <p>9 台 MCP 伺服器透過 claude.ai bridge 和 Vercel plugin 連接到本機 Claude Code 工作階段，共提供 76 個工具。</p>
+  </div>
+  <div class="cards reveal">
+    <div class="card" style="--card-accent:#5a9a6a"><h4>🧠 MemPalace</h4><p>ChromaDB 語意記憶庫 · 4312 抽屜 · 本機 MCP 掛載<br><span class="badge" style="background:rgba(90,154,106,.1);color:#5a9a6a">5 tools</span></p></div>
+    <div class="card" style="--card-accent:#4a8fc0"><h4>🚀 Vercel</h4><p>部署管理 · 日誌 · 專案 · 網域 · Toolbar<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">18 tools</span></p></div>
+    <div class="card" style="--card-accent:#8a7ab0"><h4>📝 Notion</h4><p>協作文件 · 資料庫 · 知識庫整合<br><span class="badge" style="background:rgba(138,122,176,.1);color:#8a7ab0">14 tools</span></p></div>
+    <div class="card" style="--card-accent:#4a8fc0"><h4>📧 Gmail</h4><p>郵件搜尋 · 草稿 · 標籤管理<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">12 tools</span></p></div>
+    <div class="card" style="--card-accent:#4a8fc0"><h4>📅 Google Calendar</h4><p>行事曆管理 · 排程 · 會議回覆<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">8 tools</span></p></div>
+    <div class="card" style="--card-accent:#4a8fc0"><h4>📁 Google Drive</h4><p>雲端硬碟 · 文件讀寫 · 權限管理<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">8 tools</span></p></div>
+    <div class="card" style="--card-accent:#d49a2a"><h4>🎨 Gamma</h4><p>AI 簡報/文件/網頁生成<br><span class="badge" style="background:rgba(212,154,42,.1);color:#d49a2a">7 tools</span></p></div>
+    <div class="card" style="--card-accent:#c45b3c"><h4>⚡ Zapier</h4><p>跨服務自動化整合工作流<br><span class="badge" style="background:rgba(196,91,60,.1);color:#c45b3c">2 tools</span></p></div>
+    <div class="card" style="--card-accent:#c45b3c"><h4>💬 Intercom</h4><p>客戶訊息與對話管理<br><span class="badge" style="background:rgba(196,91,60,.1);color:#c45b3c">2 tools</span></p></div>
+  </div>
+</section>
+
+<!-- ═══════════ SECTION: DEPLOYMENTS ═══════════ -->
+<section id="deployments">
+  <div class="shead reveal">
+    <div><div class="idx">05 — 對外據點</div><h2>Surge 部署站點</h2><div class="en2">SURGE.SH DEPLOYMENTS · 90 SITES</div></div>
+    <input class="search" type="search" placeholder="搜尋站點…" id="deploySearch" />
+  </div>
+  <div class="reveal" id="deployGroups"></div>
+</section>
+
+<!-- ═══════════ SECTION: SCHEDULE ═══════════ -->
+<section id="schedule">
+  <div class="shead reveal"><div><div class="idx">06 — 技能驗證</div><h2>14 天驗證排程</h2><div class="en2">SKILL VERIFICATION ROTATION</div></div></div>
+  <div class="note reveal">
+    <span class="tag">驗證說明：</span>每天輪替驗證不同類別的技能，確保所有技能在兩週內至少被驗證一次。通過的標準：技能可正常執行且輸出符合預期。
+  </div>
+  <div class="tiles reveal" id="scheduleTiles"></div>
+</section>
+
+<!-- ═══════════ SECTION: UPDATES ═══════════ -->
+<section id="updates">
+  <div class="shead reveal"><div><div class="idx">07 — 更新週誌</div><h2>系統演化時間線</h2><div class="en2">EVOLUTION LOG</div></div></div>
+  <div class="timeline reveal" id="timeline">
+    <div class="tl-item">
+      <div class="tl-date">2026-06-13</div>
+      <div class="tl-title">Warroom v3 上線</div>
+      <div class="tl-desc">新增 Studio 快速入口、雙節點架構圖、任務搜尋功能。中文化全部 KPI 標籤與技能名稱。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026-06-11</div>
+      <div class="tl-title">視覺模型切換完成</div>
+      <div class="tl-desc">發現 glm-5.1:cloud 不支援視覺輸入，改用 tesseract + pytesseract OCR 方案。Discord bridge attachment bug 修復。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026-06-08</div>
+      <div class="tl-title">戰情室主站更名</div>
+      <div class="tl-desc">hermes-monitor.surge.sh 正式上線（原 hermes-warroom.surge.sh）。HTML 三軌部署：Netlify 正式 + 匿名 + Surge.sh。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026-05-06</div>
+      <div class="tl-title">記憶架構三層化</div>
+      <div class="tl-desc">完成 L1 agent.md + L2 CONTEXT.md + L3 memory tool + MemPalace 分工明確。台股週報產生器刪除。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026-04-22</div>
+      <div class="tl-title">附近找 PWA 上線</div>
+      <div class="tl-desc">Netlify 匿名部署，OSM 資料來源踩坑：超商=shop、藥局需雙重搜尋。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026-04-20</div>
+      <div class="tl-title">四階段專案 CLI</div>
+      <div class="tl-desc">create-project / daily-routine / close-project 在 ~/.local/bin/ 建立 symlink。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026-04-08</div>
+      <div class="tl-title">Claude CLI 整合啟動</div>
+      <div class="tl-desc">Jeff 決定將 openclaw 70+ 技能映射到 Claude CLI 環境，追求跨平台工具一致性。</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer><div class="wrap">
+  <div class="big serif">AI 生態戰情室</div>
+  <p>由 Hermes Agent 自動生成與維護 · Julia / 霹靂貓 協作 · MemPalace v3.3</p>
+  <p class="muted" style="margin-top:6px">最後更新：<span id="footerTime"></span> · 每週自動偵測更新</p>
+</div></footer>
+
+<!-- ═══════════ DRAWER ═══════════ -->
+<div class="drawer-mask" id="drawerMask"></div>
+<aside class="drawer" id="drawer">
+  <div class="dh"><h3 id="drawerTitle"></h3><button class="x" id="drawerClose">✕</button></div>
+  <div class="dbody" id="drawerBody"></div>
+</aside>
+
+<!-- ═══════════ FLOAT BTN ═══════════ -->
+<a class="float-btn" href="#overview">⬆ 回頂部</a>
 
 <script>
-// ===== DATA =====
-const SURGE_SITES = [
-  {name:"hermes-skill-verify-day04",age:3,status:200,is_new:true},
-  {name:"jeff-notebooks-index",age:3,status:200,is_new:false},
-  {name:"fleet-a2a-guide",age:17,status:200,is_new:false},
-  {name:"jeff-hermes-warroom3",age:17,status:200,is_new:false},
-  {name:"hermes-warroom",age:18,status:200,is_new:false},
-  {name:"hermes-skill-verify-day03",age:18,status:200,is_new:false},
-  {name:"jeff-cinematic-selfie",age:18,status:200,is_new:false},
-  {name:"jeff-hermes-warroom2",age:21,status:200,is_new:false},
-  {name:"hermes-skill-verify-day09",age:22,status:200,is_new:false},
-  {name:"jeff-atr-showcase",age:1,status:200,is_new:false},
-  {name:"jeff-dashboards",age:1,status:200,is_new:false},
-  {name:"jeff-claude-bridge",age:2,status:200,is_new:false},
-  {name:"test-no-token-2026",age:2,status:200,is_new:false},
-  {name:"test-empty-token-2026",age:2,status:200,is_new:false},
-  {name:"jeff-video-study",age:2,status:200,is_new:false},
-  {name:"julia-skill-verify-day09",age:2,status:200,is_new:false},
-  {name:"test-empty-surge",age:2,status:200,is_new:false},
-  {name:"jeff-hermes-org",age:2,status:200,is_new:false},
-  {name:"jeff-stock-reports",age:3,status:200,is_new:false},
-  {name:"hermes-skill-verify-day8",age:3,status:200,is_new:false},
-  {name:"hermes-skills-2026",age:3,status:200,is_new:false},
-  {name:"pkm-workflow",age:4,status:200,is_new:false},
-  {name:"book-vote",age:4,status:200,is_new:false},
-  {name:"street-dance-legends",age:4,status:200,is_new:false},
-  {name:"jeff-wiki-graph",age:5,status:200,is_new:false},
-  {name:"jeff-system-analysis",age:5,status:200,is_new:false},
-  {name:"jeff-jamf200-cheatsheet",age:5,status:200,is_new:false},
-  {name:"jeff-jamf200-setup",age:6,status:200,is_new:false},
-  {name:"jeff-jamf200",age:6,status:200,is_new:false},
-  {name:"jeff-ai-chief-of-staff",age:6,status:200,is_new:false},
-  {name:"jeff-mcp-a2a-guide",age:6,status:200,is_new:false},
-  {name:"6282-report",age:6,status:200,is_new:false},
-  {name:"jeff-podcast-agentic-classic",age:6,status:200,is_new:false},
-  {name:"jeff-podcast-agentic-workflow",age:6,status:200,is_new:false},
-  {name:"jeff-kb-workflow",age:7,status:200,is_new:false},
-  {name:"jeff-nvda-tsm",age:7,status:200,is_new:false},
-  {name:"day03-report",age:7,status:200,is_new:false},
-  {name:"jeff-price-hypothesis",age:1,status:200,is_new:false},
-  {name:"jeff-podcast-translate",age:1,status:200,is_new:false},
-  {name:"jeff-invest-hub",age:1,status:200,is_new:false},
-  {name:"tsmc-ap07-meeting",age:2,status:200,is_new:false},
-  {name:"hermes-daily-dashboard",age:2,status:200,is_new:false},
-  {name:"jeff-agent-workflow-method",age:2,status:200,is_new:false},
-  {name:"sugar-lung-report",age:2,status:200,is_new:false},
-  {name:"mysurge-dashboard",age:2,status:200,is_new:false},
-  {name:"sugar-lung-workflow-chart",age:2,status:200,is_new:false},
-  {name:"jeff-ai-mindmap-may",age:2,status:200,is_new:false},
-  {name:"jeff-ai-report-may",age:2,status:200,is_new:false},
-  {name:"nbis-research",age:2,status:200,is_new:false},
-  {name:"net-research",age:2,status:200,is_new:false},
-  {name:"pltr-research",age:2,status:200,is_new:false},
-  {name:"crwv-research",age:2,status:200,is_new:false},
-  {name:"jeff-polymarket-phase4",age:2,status:200,is_new:false},
-  {name:"sugar-doctor-warning",age:2,status:200,is_new:false},
-  {name:"jeff-jia58-raci",age:3,status:200,is_new:false},
-  {name:"mac-mini-agents",age:3,status:200,is_new:false},
-  {name:"jeff-1password-arch",age:3,status:200,is_new:false},
-  {name:"hermes-jia58-modern",age:3,status:200,is_new:false},
-  {name:"hermes-jia58",age:3,status:200,is_new:false},
-  {name:"hermes-jia58-hallmark",age:3,status:200,is_new:false},
-  {name:"hermes-hallmark",age:3,status:200,is_new:false},
-  {name:"jeff-jia58",age:3,status:200,is_new:false},
-  {name:"hermes-comparison-2026",age:3,status:200,is_new:false},
-  {name:"jeff-news-digest",age:3,status:200,is_new:false},
-  {name:"hallmark-demo",age:3,status:200,is_new:false},
-  {name:"jeff-agent-slides",age:3,status:200,is_new:false},
-  {name:"jeff-dash-redesign",age:3,status:200,is_new:false},
-  {name:"mac-mini-workflow",age:4,status:200,is_new:false},
-  {name:"jeff-auto-train-poc",age:1,status:200,is_new:false},
-  {name:"jeff-skills-report",age:1,status:200,is_new:false},
-  {name:"jeff-karpathy-q2",age:1,status:200,is_new:false},
-  {name:"hermes-vs-claude",age:1,status:200,is_new:false},
-  {name:"jeff-stakeholder-map",age:1,status:200,is_new:false},
-  {name:"jeff-agent-architecture",age:1,status:200,is_new:false},
-  {name:"jeff-video-preview",age:1,status:200,is_new:false},
-  {name:"jeff-cybersec-day3",age:1,status:200,is_new:false},
-  {name:"jeff-session-stack",age:1,status:200,is_new:false},
-  {name:"darwin-investing-jeff",age:1,status:200,is_new:false},
-  {name:"mac-mini-llm-kb",age:1,status:200,is_new:false},
-  {name:"jeff-investment-dashboard",age:2,status:200,is_new:false},
-  {name:"jeff-stocks-tw-us-2026",age:2,status:200,is_new:false},
-  {name:"weekly-geopolitics-2026-04-27",age:2,status:200,is_new:false},
-  {name:"polymarket-sop-jeff",age:2,status:200,is_new:false},
-  {name:"mac-mini-ai-integration",age:2,status:200,is_new:false},
-  {name:"jeff-notebooks-wiki",age:2,status:200,is_new:false},
-  {name:"seoul-jeff-0515",age:2,status:200,is_new:false},
-  {name:"claude-ops-dashboard",age:2,status:200,is_new:false},
-  {name:"dual-device-promo",age:2,status:200,is_new:false},
-  {name:"claude-dual-device-guide",age:2,status:200,is_new:false},
-  {name:"claude-skills-summary",age:2,status:200,is_new:false}
-];
+/* ───────── DATA ───────── */
+const DEPLOYMENTS = {
+  '系統工具': [
+    {n:'hermes-skill-verify-day04',a:3,new:true},{n:'jeff-notebooks-index',a:3},{n:'fleet-a2a-guide',a:17},{n:'jeff-hermes-warroom3',a:17},{n:'hermes-warroom',a:18},{n:'hermes-skill-verify-day03',a:18},{n:'jeff-cinematic-selfie',a:18},{n:'jeff-hermes-warroom2',a:21},{n:'hermes-skill-verify-day09',a:22},{n:'jeff-atr-showcase',a:1},{n:'jeff-dashboards',a:1},{n:'jeff-claude-bridge',a:2},{n:'test-no-token-2026',a:2},{n:'test-empty-token-2026',a:2},{n:'jeff-video-study',a:2},{n:'julia-skill-verify-day09',a:2},{n:'test-empty-surge',a:2},{n:'jeff-hermes-org',a:2}
+  ],
+  '個人專案': [
+    {n:'jeff-stock-reports',a:3},{n:'hermes-skill-verify-day8',a:3},{n:'hermes-skills-2026',a:3},{n:'pkm-workflow',a:4},{n:'book-vote',a:4},{n:'street-dance-legends',a:4},{n:'jeff-wiki-graph',a:5},{n:'jeff-system-analysis',a:5},{n:'jeff-jamf200-cheatsheet',a:5},{n:'jeff-jamf200-setup',a:6},{n:'jeff-jamf200',a:6},{n:'jeff-ai-chief-of-staff',a:6},{n:'jeff-mcp-a2a-guide',a:6},{n:'6282-report',a:6},{n:'jeff-podcast-agentic-classic',a:6},{n:'jeff-podcast-agentic-workflow',a:6},{n:'jeff-kb-workflow',a:7},{n:'jeff-nvda-tsm',a:7},{n:'day03-report',a:7}
+  ],
+  '其他站點': [
+    {n:'jeff-price-hypothesis',a:1},{n:'jeff-podcast-translate',a:1},{n:'jeff-invest-hub',a:1},{n:'tsmc-ap07-meeting',a:2},{n:'hermes-daily-dashboard',a:2},{n:'jeff-agent-workflow-method',a:2},{n:'sugar-lung-report',a:2},{n:'mysurge-dashboard',a:2},{n:'sugar-lung-workflow-chart',a:2},{n:'jeff-ai-mindmap-may',a:2},{n:'jeff-ai-report-may',a:2},{n:'nbis-research',a:2},{n:'net-research',a:2},{n:'pltr-research',a:2},{n:'crwv-research',a:2},{n:'jeff-polymarket-phase4',a:2},{n:'sugar-doctor-warning',a:2},{n:'jeff-jia58-raci',a:3},{n:'mac-mini-agents',a:3},{n:'jeff-1password-arch',a:3},{n:'hermes-jia58-modern',a:3},{n:'hermes-jia58',a:3},{n:'hermes-jia58-hallmark',a:3},{n:'jeff-jia58',a:3},{n:'hermes-comparison-2026',a:3},{n:'jeff-news-digest',a:3},{n:'hallmark-demo',a:3},{n:'jeff-agent-slides',a:3},{n:'jeff-dash-redesign',a:3},{n:'mac-mini-workflow',a:4},{n:'jeff-auto-train-poc',a:1},{n:'jeff-skills-report',a:1},{n:'jeff-karpathy-q2',a:1},{n:'hermes-vs-claude',a:1},{n:'jeff-stakeholder-map',a:1},{n:'jeff-agent-architecture',a:1},{n:'jeff-video-preview',a:1},{n:'jeff-cybersec-day3',a:1},{n:'jeff-session-stack',a:1},{n:'darwin-investing-jeff',a:1},{n:'mac-mini-llm-kb',a:1},{n:'jeff-investment-dashboard',a:2},{n:'jeff-stocks-tw-us-2026',a:2},{n:'weekly-geopolitics-2026-04-27',a:2},{n:'polymarket-sop-jeff',a:2},{n:'mac-mini-ai-integration',a:2},{n:'jeff-notebooks-wiki',a:2},{n:'seoul-jeff-0515',a:2},{n:'claude-ops-dashboard',a:2},{n:'dual-device-promo',a:2},{n:'claude-dual-device-guide',a:2},{n:'claude-skills-summary',a:2}
+  ]
+};
 
 const SCHEDULE = [
-  {day:1,title:"論文搜尋+Mind Map",skills:["arxiv","excalidraw","research-paper-writing"],status:"warn"},
-  {day:2,title:"台股數據分析+PDF",skills:["mempalace","nano-pdf","daily-dashboard"],status:"pass"},
-  {day:3,title:"GitHub PR+安全掃描",skills:["github-code-review","requesting-code-review","codebase-inspection"],status:"warn"},
-  {day:4,title:"音樂創作+視覺化",skills:["songwriting-and-ai-music","songsee","ascii-art"],status:"warn"},
-  {day:5,title:"Email+記憶歸檔",skills:["himalaya","mempalace","hermes-memory-hygiene"],status:"warn"},
-  {day:6,title:"LLM部署+評估",skills:["gguf","llama-cpp","vllm","lm-evaluation-harness"],status:"warn"},
-  {day:7,title:"智慧家庭+搜尋",skills:["openhue","find-nearby","daily-dashboard"],status:"warn"},
-  {day:8,title:"Debug+TDD",skills:["systematic-debugging","test-driven-development","writing-plans"],status:"pass"},
-  {day:9,title:"社群+GIF",skills:["xitter","gif-search","blogwatcher"],status:"warn"},
-  {day:10,title:"簡報+OCR",skills:["ocr-and-documents","powerpoint","work-presentation-maker"],status:"pass"},
-  {day:11,title:"預測市場+分析",skills:["polymarket","mempalace","excalidraw"],status:"warn"},
-  {day:12,title:"多Agent協作",skills:["multi-agent-orchestration","subagent-driven-development","claude-code"],status:"pass"},
-  {day:13,title:"Obsidian+Google",skills:["obsidian","google-workspace","notion","linear"],status:"warn"},
-  {day:14,title:"綜合驗證",skills:["youtube-content","arxiv","popular-web-designs","nano-pdf"],status:"warn"}
+  {day:1,title:'論文搜尋+Mind Map',skills:['arxiv','excalidraw'],status:'warn'},
+  {day:2,title:'台股數據分析+PDF',skills:['stock-analysis','nano-pdf'],status:'pass'},
+  {day:3,title:'GitHub PR+安全掃描',skills:['github-code-review','requesting-code-review'],status:'warn'},
+  {day:4,title:'音樂創作+視覺化',skills:['songwriting-and-ai-music','songsee'],status:'warn'},
+  {day:5,title:'Email+記憶歸檔',skills:['himalaya','mempalace-weekly-maintenance'],status:'warn'},
+  {day:6,title:'LLM部署+評估',skills:['llama-cpp','vllm'],status:'warn'},
+  {day:7,title:'智慧家庭+搜尋',skills:['openhue','find-nearby'],status:'warn'},
+  {day:8,title:'Debug+TDD',skills:['systematic-debugging','test-driven-development'],status:'pass'},
+  {day:9,title:'社群+GIF',skills:['xitter','gif-search'],status:'warn'},
+  {day:10,title:'簡報+OCR',skills:['ocr-and-documents','powerpoint'],status:'pass'},
+  {day:11,title:'預測市場+分析',skills:['polymarket','excalidraw'],status:'warn'},
+  {day:12,title:'多Agent協作',skills:['multi-agent-orchestration','claude-code'],status:'pass'},
+  {day:13,title:'Obsidian+Google',skills:['obsidian','google-workspace'],status:'warn'},
+  {day:14,title:'綜合驗證',skills:['youtube-content','arxiv'],status:'warn'}
 ];
 
-const CAT_MAP = {
-  "systematic-debugging":"SW-DEV","test-driven-development":"SW-DEV","writing-plans":"SW-DEV",
-  "multi-agent-orchestration":"AGENTS","subagent-driven-development":"AGENTS","claude-code":"AGENTS",
-  "mempalace":"PROD","nano-pdf":"PROD","daily-dashboard":"PROD","ocr-and-documents":"PROD","powerpoint":"PROD","work-presentation-maker":"PROD","hermes-memory-hygiene":"PROD",
-  "gguf":"MLOPS","llama-cpp":"MLOPS","vllm":"MLOPS","lm-evaluation-harness":"MLOPS",
-  "arxiv":"RESEARCH","research-paper-writing":"RESEARCH",
-  "excalidraw":"CREATIVE","songwriting-and-ai-music":"CREATIVE","songsee":"CREATIVE","ascii-art":"CREATIVE","popular-web-designs":"CREATIVE",
-  "github-code-review":"GITHUB","requesting-code-review":"GITHUB","codebase-inspection":"GITHUB",
-  "youtube-content":"MEDIA",
-  "himalaya":"EMAIL",
-  "openhue":"LEISURE","find-nearby":"LEISURE",
-  "xitter":"SOCIAL","gif-search":"SOCIAL",
-  "blogwatcher":"FEEDS",
-  "polymarket":"FINANCE",
-  "obsidian":"NOTES","google-workspace":"NOTES","notion":"NOTES","linear":"NOTES"
-};
-
-const CAT_ZH = {
-  "SW-DEV":"軟體開發","AGENTS":"代理系統","PROD":"生產力","MLOPS":"ML維運",
-  "RESEARCH":"研究","CREATIVE":"創意","GITHUB":"GitHub","MEDIA":"媒體",
-  "EMAIL":"電子郵件","LEISURE":"生活休閒","SOCIAL":"社群媒體","FEEDS":"資訊訂閱",
-  "FINANCE":"金融","NOTES":"筆記"
-};
-
-const SKILL_ZH = {
-  "systematic-debugging":"系統化除錯","test-driven-development":"測試驅動開發","writing-plans":"規劃撰寫",
-  "multi-agent-orchestration":"多代理協作","subagent-driven-development":"子代理驅動開發","claude-code":"Claude程式碼",
-  "mempalace":"記憶宮殿","nano-pdf":"PDF編輯","daily-dashboard":"每日儀表板",
-  "ocr-and-documents":"OCR文件辨識","powerpoint":"PowerPoint簡報","work-presentation-maker":"職場簡報製作",
-  "hermes-memory-hygiene":"記憶空間維護",
-  "gguf":"GGUF模型量化","llama-cpp":"llama.cpp推理","vllm":"vLLM高效推理","lm-evaluation-harness":"LM評估框架",
-  "arxiv":"arXiv論文搜尋","research-paper-writing":"研究論文撰寫",
-  "excalidraw":"Excalidraw繪圖","songwriting-and-ai-music":"AI詞曲創作","songsee":"音頻視覺化","ascii-art":"ASCII藝術","popular-web-designs":"熱門網頁設計",
-  "github-code-review":"GitHub程式碼審查","requesting-code-review":"程式碼安全掃描","codebase-inspection":"程式碼庫檢查",
-  "youtube-content":"YouTube影片分析",
-  "himalaya":"Himalaya郵件",
-  "openhue":"Hue智慧燈光","find-nearby":"附近搜尋",
-  "xitter":"X/Twitter社群","gif-search":"GIF搜尋",
-  "blogwatcher":"部落格監控",
-  "polymarket":"Polymarket預測市場",
-  "obsidian":"Obsidian筆記","google-workspace":"Google辦公套件","notion":"Notion協作","linear":"Linear專案管理"
-};
-
-// ===== CLASSIFY SITE =====
-function classifySite(name) {
-  if (/^hermes-/.test(name) || /^julia-/.test(name)) {
-    if (/hermes-skill-verify/.test(name) || /^julia-skill-verify/.test(name)) return 'verify';
-    if (/day\d+-report/.test(name)) return 'verify';
-    return 'system';
+/* ───────── RENDER DEPLOYMENTS ───────── */
+function renderDeployments(filter='') {
+  const container = document.getElementById('deployGroups');
+  let html = '';
+  for (const [cat, sites] of Object.entries(DEPLOYMENTS)) {
+    const filtered = sites.filter(s => !filter || s.n.toLowerCase().includes(filter.toLowerCase()));
+    if (!filtered.length) continue;
+    html += `<div class="deploy-group"><h3><span class="dot" style="background:var(--accent)"></span>${cat} <span style="font-size:12px;color:var(--ink-faint);font-weight:400">(${filtered.length})</span></h3><div class="deploy-cards">`;
+    html += filtered.map(s => {
+      const age = s.a <= 3 ? `<span style="color:var(--accent);font-size:11px">● ${s.a}天</span>` : `<span style="color:var(--ink-faint);font-size:11px">${s.a}天</span>`;
+      const nw = s.new ? ' <span style="background:var(--accent);color:#fff;font-size:10px;padding:1px 5px;border-radius:3px">NEW</span>' : '';
+      return `<div class="deploy-card"><a href="https://${s.n}.surge.sh" target="_blank">${s.n}${nw}</a><div class="meta">${age} · HTTP 200 ✅</div></div>`;
+    }).join('');
+    html += '</div></div>';
   }
-  if (/^jeff-/.test(name)) return 'personal';
-  if (/^mac-mini-/.test(name)) return 'macmini';
-  if (/^test-/.test(name)) return 'test';
-  if (/^day\d+-report/.test(name)) return 'verify';
-  return 'other';
+  container.innerHTML = html || '<p style="color:var(--ink-faint);padding:2rem 0">沒有符合的站點</p>';
 }
+renderDeployments();
 
-const CAT_LABELS = {system:'系統工具',personal:'個人專案',verify:'技能驗證',macmini:'Mac Mini',test:'測試',other:'其他'};
-const CAT_CSS = {system:'cat-system',personal:'cat-personal',verify:'cat-verify',macmini:'cat-macmini',test:'cat-test',other:'cat-other'};
+document.getElementById('deploySearch').addEventListener('input', e => renderDeployments(e.target.value));
 
-// ===== CLOCK =====
-function updateClock() {
-  const now = new Date();
-  const h = String(now.getHours()).padStart(2,'0');
-  const m = String(now.getMinutes()).padStart(2,'0');
-  const s = String(now.getSeconds()).padStart(2,'0');
-  document.getElementById('clock').textContent = h+':'+m+':'+s;
-}
-setInterval(updateClock, 1000);
-updateClock();
+/* ───────── RENDER SCHEDULE ───────── */
+const st = document.getElementById('scheduleTiles');
+SCHEDULE.forEach(d => {
+  const el = document.createElement('div');
+  el.className = 'tile';
+  el.style.borderLeft = `4px solid ${d.status==='pass'?'#5a9a6a':'#d49a2a'}`;
+  el.innerHTML = `<span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent)">DAY ${String(d.day).padStart(2,'0')}</span>
+    <div class="tile-name" style="margin-top:6px">${d.title}</div>
+    <div class="tile-count">${d.skills.length} 技能 · ${d.status==='pass'?'✅ 通過':'⚠️ 待驗'}</div>`;
+  st.appendChild(el);
+});
 
-// Footer time
+/* ───────── META LINE ───────── */
+document.getElementById('metaLine').textContent = 'Julia / Hermes v0.8.0 · MemPalace v3.3 · 4312 抽屜 · 霹靂貓 v2.1';
+
+/* ───────── FOOTER TIME ───────── */
 document.getElementById('footerTime').textContent = new Date().toISOString().slice(0,19).replace('T',' ');
 
-// ===== SURGE SITES TABLE =====
-let currentFilter = 'all';
-let currentSearch = '';
+/* ───────── SCROLL REVEAL ───────── */
+const reveals = document.querySelectorAll('.reveal');
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, {threshold:.1});
+reveals.forEach(r => obs.observe(r));
 
-function renderSites() {
-  const tbody = document.getElementById('sitesTbody');
-  let filtered = SURGE_SITES.filter(s => {
-    const cat = classifySite(s.name);
-    if (currentFilter !== 'all' && cat !== currentFilter) return false;
-    if (currentSearch && !s.name.toLowerCase().includes(currentSearch.toLowerCase())) return false;
-    return true;
-  });
-  document.getElementById('siteCount').textContent = filtered.length + ' 站點';
-  tbody.innerHTML = filtered.map(s => {
-    const cat = classifySite(s.name);
-    const catLabel = CAT_LABELS[cat] || cat;
-    const catCss = CAT_CSS[cat] || 'cat-other';
-    const ageStr = s.age <= 3 ? s.age + '天' : s.age + '天';
-    const newBadge = s.is_new ? '<span class="new-badge">NEW</span>' : '';
-    return `<tr>
-      <td>${s.name}${newBadge}</td>
-      <td><a href="https://${s.name}.surge.sh" target="_blank">${s.name}.surge.sh</a></td>
-      <td>${ageStr}</td>
-      <td><span class="http-dot http-200"></span> ${s.status}</td>
-      <td><span class="cat-tag ${catCss}">${catLabel}</span></td>
-      <td></td>
-    </tr>`;
-  }).join('');
+/* ───────── NAV ACTIVE STATE ───────── */
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav.nav a[href^="#"]');
+const tocLinks = document.querySelectorAll('#toc a[href^="#"]');
+function updateNav() {
+  let cur = '';
+  sections.forEach(s => { if (scrollY >= s.offsetTop - 120) cur = s.id; });
+  navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + cur));
+  tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + cur));
 }
+window.addEventListener('scroll', updateNav);
 
-// Filter buttons
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentFilter = btn.dataset.cat;
-    renderSites();
+/* ───────── SKILL SEARCH ───────── */
+const skillSearch = document.getElementById('skillSearch');
+skillSearch.addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('#depts table tr').forEach(tr => {
+    if (tr.querySelector('td')) {
+      tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+    }
   });
 });
-
-document.getElementById('siteSearch').addEventListener('input', e => {
-  currentSearch = e.target.value;
-  renderSites();
-});
-
-renderSites();
-
-// ===== SCHEDULE GRID =====
-const scheduleGrid = document.getElementById('scheduleGrid');
-SCHEDULE.forEach(day => {
-  const card = document.createElement('div');
-  card.className = 'day-card ' + day.status;
-  card.innerHTML = `
-    <div class="day-num">DAY ${String(day.day).padStart(2,'0')}</div>
-    <div class="day-title">${day.title}</div>
-    <div class="day-skills">${day.skills.length} 技能</div>
-    <div class="day-status ${day.status}"></div>
-  `;
-  card.addEventListener('click', () => openModal(day));
-  scheduleGrid.appendChild(card);
-});
-
-// ===== MODAL =====
-function openModal(day) {
-  const modal = document.getElementById('modal');
-  document.getElementById('modalDay').textContent = 'DAY ' + String(day.day).padStart(2,'0');
-  document.getElementById('modalTitle').textContent = day.title;
-  const list = document.getElementById('modalSkills');
-  list.innerHTML = day.skills.map(sk => {
-    const zh = SKILL_ZH[sk] || sk;
-    return `<li><span class="modal-skill-name">${sk}</span><span class="modal-skill-zh">${zh}</span></li>`;
-  }).join('');
-  modal.classList.add('show');
-}
-document.getElementById('modalClose').addEventListener('click', () => {
-  document.getElementById('modal').classList.remove('show');
-});
-document.getElementById('modal').addEventListener('click', e => {
-  if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
-});
-
-// ===== CATEGORY READINESS =====
-// Calculate readiness per category
-const allSkills = new Set();
-SCHEDULE.forEach(d => d.skills.forEach(sk => allSkills.add(sk)));
-
-const catSkillCount = {};
-const catSkillVerified = {};
-Object.values(CAT_MAP).forEach(cat => { catSkillCount[cat] = 0; catSkillVerified[cat] = 0; });
-allSkills.forEach(sk => {
-  const cat = CAT_MAP[sk];
-  if (cat) catSkillCount[cat]++;
-});
-// Count verified: skills that appear in "pass" days
-const verifiedSkills = new Set();
-SCHEDULE.filter(d => d.status === 'pass').forEach(d => d.skills.forEach(sk => verifiedSkills.add(sk)));
-allSkills.forEach(sk => {
-  const cat = CAT_MAP[sk];
-  if (cat && verifiedSkills.has(sk)) catSkillVerified[cat]++;
-});
-
-const catColors = {
-  'AGENTS':'#00b4ff','PROD':'#00ff88','SW-DEV':'#ffaa00','MLOPS':'#ff3344',
-  'RESEARCH':'#aa64ff','CREATIVE':'#ff6b9d','MEDIA':'#00d4ff','GITHUB':'#4ecdc4',
-  'EMAIL':'#ff8c42','LEISURE':'#95e1d3','SOCIAL':'#f38181','FEEDS':'#7ec8e3',
-  'FINANCE':'#ffd93d','NOTES':'#c3aed6'
-};
-
-const catBarsEl = document.getElementById('catBars');
-const catOrder = ['AGENTS','PROD','SW-DEV','MLOPS','RESEARCH','CREATIVE','GITHUB','MEDIA','EMAIL','LEISURE','SOCIAL','FEEDS','FINANCE','NOTES'];
-catOrder.forEach(cat => {
-  const total = catSkillCount[cat] || 0;
-  const verified = catSkillVerified[cat] || 0;
-  const pct = total > 0 ? Math.round(verified / total * 100) : 0;
-  const zh = CAT_ZH[cat] || cat;
-  const color = catColors[cat] || '#00b4ff';
-  const row = document.createElement('div');
-  row.className = 'cat-bar-row';
-  row.innerHTML = `
-    <span class="cat-bar-label">${cat}<br><small>${zh}</small></span>
-    <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${color}">${pct > 0 ? pct+'%' : ''}</div></div>
-    <span class="cat-bar-pct">${verified}/${total}</span>
-  `;
-  catBarsEl.appendChild(row);
-});
-
-// ===== RADAR CHART =====
-const radarCats = ['AGENTS','PROD','SW-DEV','MLOPS','RESEARCH','CREATIVE','MEDIA','GITHUB'];
-const radarZh = ['代理系統','生產力','軟體開發','ML維運','研究','創意','媒體','GitHub'];
-function drawRadar() {
-  const svg = document.getElementById('radarSvg');
-  const cx = 200, cy = 200, r = 150;
-  const n = radarCats.length;
-  let html = '';
-  // Background circles
-  for (let i = 5; i >= 1; i--) {
-    const ri = r * i / 5;
-    html += `<circle cx="${cx}" cy="${cy}" r="${ri}" fill="none" stroke="#1a2a44" stroke-width="1"/>`;
-  }
-  // Axes
-  for (let i = 0; i < n; i++) {
-    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
-    const x2 = cx + r * Math.cos(angle);
-    const y2 = cy + r * Math.sin(angle);
-    html += `<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#1a2a44" stroke-width="1"/>`;
-  }
-  // Data polygon
-  const points = radarCats.map((cat, i) => {
-    const total = catSkillCount[cat] || 0;
-    const verified = catSkillVerified[cat] || 0;
-    const pct = total > 0 ? verified / total : 0;
-    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
-    const x = cx + r * pct * Math.cos(angle);
-    const y = cy + r * pct * Math.sin(angle);
-    return `${x},${y}`;
-  }).join(' ');
-  html += `<polygon points="${points}" fill="rgba(0,180,255,0.15)" stroke="#00b4ff" stroke-width="2"/>`;
-  // Dots + labels
-  radarCats.forEach((cat, i) => {
-    const total = catSkillCount[cat] || 0;
-    const verified = catSkillVerified[cat] || 0;
-    const pct = total > 0 ? verified / total : 0;
-    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
-    const x = cx + r * pct * Math.cos(angle);
-    const y = cy + r * pct * Math.sin(angle);
-    html += `<circle cx="${x}" cy="${y}" r="4" fill="#00b4ff"/>`;
-    const lx = cx + (r + 28) * Math.cos(angle);
-    const ly = cy + (r + 28) * Math.sin(angle);
-    html += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="#c8d6e5" font-size="10" font-family="JetBrains Mono,monospace">${radarZh[i]}</text>`;
-  });
-  svg.innerHTML = html;
-}
-drawRadar();
-
-// ===== SKILL MATRIX =====
-const skillGrid = document.getElementById('skillGrid');
-const allSkillsArr = Array.from(allSkills).sort();
-allSkillsArr.forEach(sk => {
-  const zh = SKILL_ZH[sk] || sk;
-  const verified = verifiedSkills.has(sk);
-  const chip = document.createElement('div');
-  chip.className = 'skill-chip ' + (verified ? 'verified' : 'unverified');
-  chip.innerHTML = `<span class="skill-name">${verified ? '✅' : '⚠️'} ${sk}</span><span class="skill-zh">${zh}</span>`;
-  skillGrid.appendChild(chip);
-});
-
-// ===== SYSTEM LOG =====
-const logBox = document.getElementById('logBox');
-const now = new Date();
-const logEntries = SCHEDULE.map((day, i) => {
-  const d = new Date(now);
-  d.setDate(d.getDate() - (14 - day.day));
-  const ts = d.toISOString().slice(0, 10) + ' ' + String(8 + i).padStart(2,'0') + ':00';
-  const statusTag = day.status === 'pass' ? '<span class="log-ok">[PASS]</span>' : '<span class="log-warn">[WARN]</span>';
-  return `<div class="log-line"><span class="log-ts">${ts}</span> ${statusTag} Day${String(day.day).padStart(2,'0')} ${day.title} — ${day.skills.length} skills ${day.status === 'pass' ? '✅ 驗證通過' : '⚠️ 待加強'}</div>`;
-});
-// Add site deployment logs
-const siteLogs = SURGE_SITES.slice(0, 10).map((s, i) => {
-  const d = new Date(now);
-  d.setDate(d.getDate() - s.age);
-  const ts = d.toISOString().slice(0, 10);
-  return `<div class="log-line"><span class="log-ts">${ts} 09:${String(30 + i).padStart(2,'0')}</span> <span class="log-ok">[200]</span> ${s.name}.surge.sh deployed</div>`;
-});
-logBox.innerHTML = siteLogs.join('') + logEntries.join('');
-
-// ===== KPI =====
-const kpi200Count = SURGE_SITES.filter(s => s.status === 200).length;
-document.getElementById('kpiTotal').textContent = SURGE_SITES.length;
-document.getElementById('kpi200').textContent = kpi200Count;
-document.getElementById('kpiPass').textContent = SCHEDULE.filter(d => d.status === 'pass').length;
-document.getElementById('kpiError').textContent = SURGE_SITES.filter(s => s.status !== 200).length;
 </script>
 </body>
 </html>
