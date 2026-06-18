@@ -248,6 +248,7 @@ footer .big{font-family:'Noto Serif TC',serif;font-size:20px;font-weight:700;col
   <a href="#mcp">MCP 工具鏈</a>
   <a href="#deployments">部署站點</a>
   <a href="#schedule">驗證排程</a>
+  <a href="#claude-code">Claude Code 生態</a>
   <a href="#updates">更新週誌</a>
 </nav>
 
@@ -284,6 +285,7 @@ footer .big{font-family:'Noto Serif TC',serif;font-size:20px;font-weight:700;col
   <a href="#depts">技能庫</a>
   <a href="#deployments">部署</a>
   <a href="#schedule">排程</a>
+  <a href="#claude-code">CC生態</a>
   <a href="#updates">週誌</a>
 </div></nav>
 
@@ -295,8 +297,8 @@ footer .big{font-family:'Noto Serif TC',serif;font-size:20px;font-weight:700;col
     <div><div class="idx">00 — 生態總覽</div><h2>系統核心指標</h2><div class="en2">SYSTEM OVERVIEW</div></div>
   </div>
   <div class="stat-grid reveal">
-    <div class="stat-card"><div class="num">123</div><div class="label">技能總數</div></div>
-    <div class="stat-card"><div class="num">9</div><div class="label">MCP 伺服器</div></div>
+    <div class="stat-card"><div class="num">247</div><div class="label">技能總數（Hermes 122 + ECC 125）</div></div>
+    <div class="stat-card"><div class="num">23</div><div class="label">MCP 配置（Cloud 9 + ECC 14）</div></div>
     <div class="stat-card"><div class="num">5</div><div class="label">部門分類</div></div>
     <div class="stat-card"><div class="num">76</div><div class="label">MCP 工具</div></div>
     <div class="stat-card"><div class="num">90</div><div class="label">Surge 站點</div></div>
@@ -654,6 +656,136 @@ footer .big{font-family:'Noto Serif TC',serif;font-size:20px;font-weight:700;col
   <div class="tiles reveal" id="scheduleTiles"></div>
 </section>
 
+
+<!-- ═══════════ SECTION: CLAUDE CODE ═══════════ -->
+<section id="claude-code">
+  <div class="shead reveal"><div><div class="idx">05 — Claude Code 生態系</div><h2>Everything Claude Code 研發部</h2><div class="en2">CLAUDE CODE PLUGIN · v1.9.0 · 28 AGENTS · 125 SKILLS · 14 MCP CONFIGS</div></div></div>
+
+  <div class="stat-grid reveal">
+    <div class="stat-card"><div class="num">28</div><div class="label">專業 Agents</div></div>
+    <div class="stat-card"><div class="num">125</div><div class="label">Workflow Skills</div></div>
+    <div class="stat-card"><div class="num">14</div><div class="label">MCP 配置</div></div>
+    <div class="stat-card"><div class="num">60</div><div class="label">Slash Commands</div></div>
+  </div>
+
+  <div class="highlight-box reveal">
+    <strong>雙軌生態互補</strong>
+    <p>透過 Claude Code 插件市集安裝的 <strong>Everything Claude Code (v1.9.0)</strong>，提供 28 個專業 AI Agent、125 個 Workflow Skills、60 個 Slash Commands，以及 14 個 MCP Server 配置模板。與 Hermes 的 122 個技能形成互補：<strong>Hermes</strong> 負責對話協調與執行自動化，<strong>Claude Code</strong> 負責深度工程開發與程式品質把關。</p>
+  </div>
+
+  <!-- AGENTS -->
+  <div class="reveal" style="margin-bottom:48px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="width:12px;height:12px;border-radius:50%;background:#4a8fc0;display:inline-block"></span>
+      <h3 style="font-size:1.15rem;font-weight:700">🎯 28 個專業 Agents</h3>
+      <span style="font-size:12px;color:var(--ink-faint);margin-left:auto">按職能分組</span>
+    </div>
+    <div class="cards">
+      <div class="card" style="--card-accent:#4a8fc0"><h4>🗺️ planner</h4><p>實作規劃與任務分解<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">規劃設計</span></p></div>
+      <div class="card" style="--card-accent:#8a7ab0"><h4>🏗️ architect</h4><p>系統設計與擴充性決策<br><span class="badge" style="background:rgba(138,122,176,.1);color:#8a7ab0">規劃設計</span></p></div>
+      <div class="card" style="--card-accent:#5a9a6a"><h4>🧪 tdd-guide</h4><p>測試驅動開發引導<br><span class="badge" style="background:rgba(90,154,106,.1);color:#5a9a6a">測試</span></p></div>
+      <div class="card" style="--card-accent:#c45b3c"><h4>🔍 code-reviewer</h4><p>程式碼品質與可維護性<br><span class="badge" style="background:rgba(196,91,60,.1);color:#c45b3c">審查</span></p></div>
+      <div class="card" style="--card-accent:#c45b3c"><h4>🛡️ security-reviewer</h4><p>漏洞偵測與安全審查<br><span class="badge" style="background:rgba(196,91,60,.1);color:#c45b3c">審查</span></p></div>
+      <div class="card" style="--card-accent:#d49a2a"><h4>🔧 build-error-resolver</h4><p>建構/型別錯誤修復<br><span class="badge" style="background:rgba(212,154,42,.1);color:#d49a2a">建構修復</span></p></div>
+      <div class="card" style="--card-accent:#d49a2a"><h4>🎭 e2e-runner</h4><p>端到端 Playwright 測試<br><span class="badge" style="background:rgba(212,154,42,.1);color:#d49a2a">測試</span></p></div>
+      <div class="card" style="--card-accent:#8a7ab0"><h4>📚 doc-updater</h4><p>文件與 codemap 更新<br><span class="badge" style="background:rgba(138,122,176,.1);color:#8a7ab0">維運</span></p></div>
+      <div class="card" style="--card-accent:#8a7ab0"><h4>🔎 docs-lookup</h4><p>文件與 API 參考查詢<br><span class="badge" style="background:rgba(138,122,176,.1);color:#8a7ab0">維運</span></p></div>
+      <div class="card" style="--card-accent:#8a7ab0"><h4>🧹 refactor-cleaner</h4><p>死碼清理與重構<br><span class="badge" style="background:rgba(138,122,176,.1);color:#8a7ab0">維運</span></p></div>
+      <div class="card" style="--card-accent:#c45b3c"><h4>📊 harness-optimizer</h4><p>Harness 配置調校<br><span class="badge" style="background:rgba(196,91,60,.1);color:#c45b3c">維運</span></p></div>
+      <div class="card" style="--card-accent:#1e2a4a"><h4>💼 chief-of-staff</h4><p>多通路通訊分類與草擬<br><span class="badge" style="background:rgba(30,42,74,.1);color:#1e2a4a">通訊</span></p></div>
+      <div class="card" style="--card-accent:#1e2a4a"><h4>🔄 loop-operator</h4><p>自主循環執行與監控<br><span class="badge" style="background:rgba(30,42,74,.1);color:#1e2a4a">自主運作</span></p></div>
+      <div class="card" style="--card-accent:#4a8fc0"><h4>🐍 python-reviewer</h4><p>Python 程式碼審查<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">審查</span></p></div>
+      <div class="card" style="--card-accent:#4a8fc0"><h4>📘 typescript-reviewer</h4><p>TypeScript / JavaScript 審查<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">審查</span></p></div>
+      <div class="card" style="--card-accent:#4a8fc0"><h4>☕ java-reviewer</h4><p>Java / Spring Boot 審查<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">審查</span></p></div>
+      <div class="card" style="--card-accent:#4a8fc0"><h4>🟣 kotlin-reviewer</h4><p>Kotlin / Android / KMP 審查<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">審查</span></p></div>
+      <div class="card" style="--card-accent:#4a8fc0"><h4>🔵 go-reviewer</h4><p>Go 程式碼審查<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">審查</span></p></div>
+      <div class="card" style="--card-accent:#4a8fc0"><h4>🦀 rust-reviewer</h4><p>Rust 程式碼審查<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">審查</span></p></div>
+      <div class="card" style="--card-accent:#4a8fc0"><h4>⚙️ cpp-reviewer</h4><p>C++ 程式碼審查<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">審查</span></p></div>
+      <div class="card" style="--card-accent:#4a8fc0"><h4>🗄️ database-reviewer</h4><p>PostgreSQL / Supabase 審查<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">審查</span></p></div>
+      <div class="card" style="--card-accent:#4a8fc0"><h4>🩺 flutter-reviewer</h4><p>Flutter / Dart 程式碼審查<br><span class="badge" style="background:rgba(74,143,192,.1);color:#4a8fc0">審查</span></p></div>
+      <div class="card" style="--card-accent:#d49a2a"><h4>🔧 go-build-resolver</h4><p>Go 建構錯誤修復<br><span class="badge" style="background:rgba(212,154,42,.1);color:#d49a2a">建構修復</span></p></div>
+      <div class="card" style="--card-accent:#d49a2a"><h4>🔧 java-build-resolver</h4><p>Java / Maven / Gradle 修復<br><span class="badge" style="background:rgba(212,154,42,.1);color:#d49a2a">建構修復</span></p></div>
+      <div class="card" style="--card-accent:#d49a2a"><h4>🔧 kotlin-build-resolver</h4><p>Kotlin / Gradle 建構修復<br><span class="badge" style="background:rgba(212,154,42,.1);color:#d49a2a">建構修復</span></p></div>
+      <div class="card" style="--card-accent:#d49a2a"><h4>🔧 cpp-build-resolver</h4><p>C++ 建構錯誤修復<br><span class="badge" style="background:rgba(212,154,42,.1);color:#d49a2a">建構修復</span></p></div>
+      <div class="card" style="--card-accent:#d49a2a"><h4>🔧 rust-build-resolver</h4><p>Rust 建構錯誤修復<br><span class="badge" style="background:rgba(212,154,42,.1);color:#d49a2a">建構修復</span></p></div>
+      <div class="card" style="--card-accent:#d49a2a"><h4>🔧 pytorch-build-resolver</h4><p>PyTorch 執行期 / CUDA / 訓練修復<br><span class="badge" style="background:rgba(212,154,42,.1);color:#d49a2a">建構修復</span></p></div>
+    </div>
+  </div>
+
+  <!-- SKILLS -->
+  <div class="reveal" style="margin-bottom:48px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="width:12px;height:12px;border-radius:50%;background:#5a9a6a;display:inline-block"></span>
+      <h3 style="font-size:1.15rem;font-weight:700">📚 125 個 Workflow Skills</h3>
+      <span style="font-size:12px;color:var(--ink-faint);margin-left:auto">按語言/領域分組</span>
+    </div>
+    <div class="highlight-box" style="border-left-color:#5a9a6a">
+      <strong>分類總覽</strong>
+      <p>125 個 skills 涵蓋 12 種程式語言、框架模式、AI/ML 工程、安全審查、研究內容、企業業務與品質優化等領域。每個 skill 都包含可獨立執行的 workflow 指令集，供 Agents 自動化調用。</p>
+    </div>
+    <div class="tiles" id="eccSkillsTiles">
+      <div class="tile" style="border-left:4px solid #4a8fc0"><span class="tile-icon">🐍</span><div class="tile-name">Python 生態</div><div class="tile-count">7 skills</div></div>
+      <div class="tile" style="border-left:4px solid #d49a2a"><span class="tile-icon">📘</span><div class="tile-name">JS/TS 前端</div><div class="tile-count">5 skills</div></div>
+      <div class="tile" style="border-left:4px solid #c45b3c"><span class="tile-icon">☕</span><div class="tile-name">Java / Kotlin</div><div class="tile-count">10 skills</div></div>
+      <div class="tile" style="border-left:4px solid #4a8fc0"><span class="tile-icon">🔵</span><div class="tile-name">Go 語言</div><div class="tile-count">2 skills</div></div>
+      <div class="tile" style="border-left:4px solid #8a7ab0"><span class="tile-icon">🦀</span><div class="tile-name">Rust 語言</div><div class="tile-count">2 skills</div></div>
+      <div class="tile" style="border-left:4px solid #5a9a6a"><span class="tile-icon">⚙️</span><div class="tile-name">C++ 語言</div><div class="tile-count">2 skills</div></div>
+      <div class="tile" style="border-left:4px solid #8a7ab0"><span class="tile-icon">🐘</span><div class="tile-name">PHP / Laravel</div><div class="tile-count">4 skills</div></div>
+      <div class="tile" style="border-left:4px solid #c45b3c"><span class="tile-icon">🐪</span><div class="tile-name">Perl</div><div class="tile-count">3 skills</div></div>
+      <div class="tile" style="border-left:4px solid #1e2a4a"><span class="tile-icon">📱</span><div class="tile-name">Swift / Flutter</div><div class="tile-count">7 skills</div></div>
+      <div class="tile" style="border-left:4px solid #4a8fc0"><span class="tile-icon">🔧</span><div class="tile-name">通用開發</div><div class="tile-count">10 skills</div></div>
+      <div class="tile" style="border-left:4px solid #c45b3c"><span class="tile-icon">🛡️</span><div class="tile-name">安全與審查</div><div class="tile-count">5 skills</div></div>
+      <div class="tile" style="border-left:4px solid #d49a2a"><span class="tile-icon">🤖</span><div class="tile-name">AI / ML 工程</div><div class="tile-count">10 skills</div></div>
+      <div class="tile" style="border-left:4px solid #5a9a6a"><span class="tile-icon">🔬</span><div class="tile-name">研究與內容</div><div class="tile-count">7 skills</div></div>
+      <div class="tile" style="border-left:4px solid #8a7ab0"><span class="tile-icon">🧰</span><div class="tile-name">工具與 MCP</div><div class="tile-count">11 skills</div></div>
+      <div class="tile" style="border-left:4px solid #1e2a4a"><span class="tile-icon">🏢</span><div class="tile-name">企業與業務</div><div class="tile-count">13 skills</div></div>
+      <div class="tile" style="border-left:4px solid #4a8fc0"><span class="tile-icon">✨</span><div class="tile-name">品質與優化</div><div class="tile-count">13 skills</div></div>
+      <div class="tile" style="border-left:4px solid #d49a2a"><span class="tile-icon">💎</span><div class="tile-name">設計與其他</div><div class="tile-count">3 skills</div></div>
+    </div>
+  </div>
+
+  <!-- MCP SERVERS -->
+  <div class="reveal">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="width:12px;height:12px;border-radius:50%;background:#d49a2a;display:inline-block"></span>
+      <h3 style="font-size:1.15rem;font-weight:700">🔗 MCP Server 配置清單</h3>
+      <span style="font-size:12px;color:var(--ink-faint);margin-left:auto">14 servers · everything-claude-code 插件內建</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr><th>伺服器名稱</th><th>類型</th><th>功能說明</th></tr>
+        <tr><td><code>github</code></td><td>npx</td><td>GitHub operations — PRs, issues, repos</td></tr>
+        <tr><td><code>firecrawl</code></td><td>npx</td><td>Web scraping and crawling</td></tr>
+        <tr><td><code>supabase</code></td><td>npx</td><td>Supabase database operations</td></tr>
+        <tr><td><code>memory</code></td><td>npx</td><td>Persistent memory across sessions</td></tr>
+        <tr><td><code>sequential-thinking</code></td><td>npx</td><td>Chain-of-thought reasoning</td></tr>
+        <tr><td><code>vercel</code></td><td>http</td><td>Vercel deployments and projects</td></tr>
+        <tr><td><code>railway</code></td><td>npx</td><td>Railway deployments</td></tr>
+        <tr><td><code>cloudflare-docs</code></td><td>http</td><td>Cloudflare documentation search</td></tr>
+        <tr><td><code>cloudflare-workers-builds</code></td><td>http</td><td>Cloudflare Workers builds</td></tr>
+        <tr><td><code>cloudflare-workers-bindings</code></td><td>http</td><td>Cloudflare Workers bindings</td></tr>
+        <tr><td><code>cloudflare-observability</code></td><td>http</td><td>Cloudflare observability / logs</td></tr>
+        <tr><td><code>clickhouse</code></td><td>http</td><td>ClickHouse analytics queries</td></tr>
+        <tr><td><code>exa-web-search</code></td><td>npx</td><td>Web search, research, data ingestion via Exa API</td></tr>
+        <tr><td><code>context7</code></td><td>npx</td><td>Live documentation lookup</td></tr>
+        <tr><td><code>magic</code></td><td>npx</td><td>Magic UI components</td></tr>
+        <tr><td><code>filesystem</code></td><td>npx</td><td>Filesystem operations</td></tr>
+        <tr><td><code>insaits</code></td><td>python3</td><td>AI-to-AI security monitoring — anomaly detection, OWASP MCP Top 10</td></tr>
+        <tr><td><code>playwright</code></td><td>npx</td><td>Browser automation and testing via Playwright</td></tr>
+        <tr><td><code>fal-ai</code></td><td>npx</td><td>AI image / video / audio generation via fal.ai</td></tr>
+        <tr><td><code>browserbase</code></td><td>npx</td><td>Cloud browser sessions via Browserbase</td></tr>
+        <tr><td><code>browser-use</code></td><td>http</td><td>AI browser agent for web tasks</td></tr>
+        <tr><td><code>devfleet</code></td><td>http</td><td>Multi-agent orchestration — dispatch parallel Claude Code agents</td></tr>
+        <tr><td><code>token-optimizer</code></td><td>npx</td><td>Token optimization for 95%+ context reduction</td></tr>
+        <tr><td><code>confluence</code></td><td>npx</td><td>Confluence Cloud integration — search pages, retrieve content</td></tr>
+      </table>
+    </div>
+    <div class="note reveal" style="margin-top:16px">
+      <span class="tag">⚠️ 注意：</span>MCP Server 需將 <code>YOUR_*_HERE</code> 佔位符替換為實際 API 金鑰後方可啟用。建議同時啟用不超過 10 個以保持 context window 充裕。
+    </div>
+  </div>
+</section>
+
 <!-- ═══════════ SECTION: UPDATES ═══════════ -->
 <section id="updates">
   <div class="shead reveal"><div><div class="idx">07 — 更新週誌</div><h2>系統演化時間線</h2><div class="en2">EVOLUTION LOG</div></div></div>
@@ -716,7 +848,7 @@ footer .big{font-family:'Noto Serif TC',serif;font-size:20px;font-weight:700;col
 <!-- ═══════════ FOOTER ═══════════ -->
 <footer><div class="wrap">
   <div class="big serif">AI 生態戰情室</div>
-  <p>由 Hermes Agent 自動生成與維護 · Julia / 霹靂貓 協作 · MemPalace v3.3</p>
+  <p>由 Hermes Agent 自動生成與維護 · Julia / 霹靂貓 協作 · MemPalace v3.3 · Everything Claude Code v1.9.0</p>
   <p class="muted" style="margin-top:6px">最後更新：<span id="footerTime"></span> · 每週自動偵測更新</p>
 </div></footer>
 
@@ -795,7 +927,7 @@ SCHEDULE.forEach(d => {
 });
 
 /* ───────── META LINE ───────── */
-document.getElementById('metaLine').textContent = 'Julia / Hermes v0.8.0 · MemPalace v3.3 · 4312 抽屜 · 霹靂貓 v2.1';
+document.getElementById('metaLine').textContent = 'Julia / Hermes v0.8.0 · MemPalace v3.3 · 4312 抽屜 · 霹靂貓 v2.1 · ECC v1.9.0';
 
 /* ───────── FOOTER TIME ───────── */
 document.getElementById('footerTime').textContent = new Date().toISOString().slice(0,19).replace('T',' ');
